@@ -105,10 +105,35 @@ export default function Parts() {
     retry: 1,
   });
   
+  // Kullanıcı oturumu
+  const { data: userData } = useQuery({
+    queryKey: ['/api/auth/me'],
+  });
+
   // Parça ekle
   const addPartMutation = useMutation({
     mutationFn: async (data: PartFormValues) => {
+      // API isteği, formData'yı ve kullanıcı ID'sini JSON olarak gönder
+      // Not: Burada userId alanını otomatik olarak ekleyerek kullanıcıdan gizliyoruz
       const res = await apiRequest("POST", "/api/parts", data);
+      // HTTP 400 hatasında da JSON yanıt alıyoruz, bunu işleyelim
+      if (!res.ok) {
+        const errorData = await res.json();
+        // Zod hataları varsa, bunları yakala
+        if (errorData.errors) {
+          const fieldErrors: Record<string, string> = {};
+          errorData.errors.forEach((err: any) => {
+            if (err.path && err.path.length > 0) {
+              const fieldName = err.path[err.path.length - 1].toString();
+              fieldErrors[fieldName] = err.message;
+            }
+          });
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+          }
+        }
+        throw new Error(errorData.message || "Parça eklenirken bir hata oluştu");
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -187,12 +212,28 @@ export default function Parts() {
       // Form verilerini doğrula
       const validatedData = partSchema.parse(formData);
       
-      if (isEditing && selectedPartId) {
-        // Parçayı güncelle
-        updatePartMutation.mutate({ id: selectedPartId, data: validatedData });
+      // Kullanıcı kimliğini ekle (userId)
+      if (userData && userData.id) {
+        // Kullanıcı verisi varsa, userId alanını ekle
+        const dataWithUserId = {
+          ...validatedData,
+          userId: userData.id
+        };
+        
+        if (isEditing && selectedPartId) {
+          // Parçayı güncelle
+          updatePartMutation.mutate({ id: selectedPartId, data: dataWithUserId });
+        } else {
+          // Yeni parça ekle
+          addPartMutation.mutate(dataWithUserId);
+        }
       } else {
-        // Yeni parça ekle
-        addPartMutation.mutate(validatedData);
+        // Kullanıcı oturumu yoksa hata göster
+        toast({
+          title: "Hata",
+          description: "Oturum bilgileriniz alınamadı. Lütfen tekrar giriş yapın.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
