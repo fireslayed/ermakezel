@@ -101,11 +101,6 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       icon: <Map className="mr-2 h-4 w-4" />,
     },
     {
-      title: "Yer Bildirimi",
-      href: "/location-report",
-      icon: <Map className="mr-2 h-4 w-4" />,
-    },
-    {
       title: "Parçalar",
       href: "/parts",
       icon: <Package className="mr-2 h-4 w-4" />,
