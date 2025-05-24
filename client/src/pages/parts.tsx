@@ -210,7 +210,9 @@ export default function Parts() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+    const target = e.target;
+    const name = target.name;
+    const value = target.value;
     
     // Sayısal değerler için dönüşüm
     if (["length", "width", "height", "weight"].includes(name)) {
@@ -221,8 +223,8 @@ export default function Parts() {
     }
     
     // Resim dosyası seçildi
-    if (type === "file" && e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    if (target instanceof HTMLInputElement && target.type === "file" && target.files && target.files[0]) {
+      const file = target.files[0];
       const reader = new FileReader();
       
       reader.onloadend = () => {
@@ -505,7 +507,7 @@ export default function Parts() {
                   <div className="border rounded-md overflow-hidden w-full">
                     <div className="w-full" style={{ boxSizing: 'border-box', overflowX: 'hidden' }}>
                       <CKEditor
-                        editor={ClassicEditor}
+                        editor={ClassicEditor as any}
                         data={formData.description || ""}
                         onChange={(event: any, editor: any) => {
                           const data = editor.getData();
