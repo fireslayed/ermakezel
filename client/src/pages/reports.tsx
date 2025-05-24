@@ -155,19 +155,21 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
         />
       </div>
       
-      <div className="grid grid-cols-2 gap-4 mt-4">
-        {/* Rapor tarihi */}
-        <div className="space-y-2">
-          <Label htmlFor="reportDate">Rapor Tarihi</Label>
-          <Input
-            id="reportDate"
-            name="reportDate"
-            type="date"
-            value={formData.reportDate}
-            onChange={handleChange}
-            required
-          />
-        </div>
+      {/* Rapor tarihi - ayrı satırda tam genişlikte */}
+      <div className="space-y-2 mt-4 mb-4">
+        <Label htmlFor="reportDate">Rapor Tarihi</Label>
+        <Input
+          id="reportDate"
+          name="reportDate"
+          type="date"
+          value={formData.reportDate}
+          onChange={handleChange}
+          required
+          className="w-full"
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="reportType">Rapor Türü</Label>
           <Select 
@@ -215,37 +217,39 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
         />
       </div>
       
-      <div className="space-y-2 mb-6">
+      <div className="space-y-2 my-6">
         <Label htmlFor="description">Açıklama</Label>
-        <div className="min-h-[250px] border rounded-md overflow-hidden w-full">
-          <CKEditor
-            editor={ClassicEditor}
-            data={formData.description || ""}
-            onChange={(event, editor) => {
-              const data = editor.getData();
-              handleEditorChange(data);
-            }}
-            config={{
-              toolbar: [
-                'heading', '|', 
-                'bold', 'italic', 'link', '|',
-                'bulletedList', 'numberedList', '|',
-                'outdent', 'indent', '|',
-                'blockQuote', 'insertTable', 'imageUpload', '|',
-                'undo', 'redo'
-              ],
-              language: 'tr',
-              placeholder: "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)",
-              image: {
+        <div className="min-h-[300px] border rounded-md overflow-hidden p-0">
+          <div className="w-full h-full px-0">
+            <CKEditor
+              editor={ClassicEditor}
+              data={formData.description || ""}
+              onChange={(event, editor) => {
+                const data = editor.getData();
+                handleEditorChange(data);
+              }}
+              config={{
                 toolbar: [
-                  'imageTextAlternative',
-                  'imageStyle:inline',
-                  'imageStyle:block',
-                  'imageStyle:side'
-                ]
-              }
-            }}
-          />
+                  'heading', '|', 
+                  'bold', 'italic', 'link', '|',
+                  'bulletedList', 'numberedList', '|',
+                  'outdent', 'indent', '|',
+                  'blockQuote', 'insertTable', 'imageUpload', '|',
+                  'undo', 'redo'
+                ],
+                language: 'tr',
+                placeholder: "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)",
+                image: {
+                  toolbar: [
+                    'imageTextAlternative',
+                    'imageStyle:inline',
+                    'imageStyle:block',
+                    'imageStyle:side'
+                  ]
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
       
@@ -312,14 +316,14 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
 
       
       {/* Dosya yükleme (ileri versiyonlarda eklenecek) */}
-      <div className="space-y-2 mx-0 my-6">
+      <div className="space-y-2 w-full my-6">
         <Label>Dosyalar</Label>
         <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground w-full">
           <p>Dosya yükleme özelliği yakında eklenecek</p>
         </div>
       </div>
       
-      <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
+      <Button type="submit" className="w-full my-6 py-6" disabled={isSubmitting}>
         {isSubmitting ? "Kaydediliyor..." : defaultValues ? "Raporu Güncelle" : "Raporu Kaydet"}
       </Button>
     </form>
