@@ -538,7 +538,8 @@ export default function Plan() {
       notes: [],
       images: [],
       hasNotes: false,
-      hasImages: false
+      hasImages: false,
+      color: pointColor // Seçili renk
     };
 
     setPoints([...points, newPoint]);
@@ -977,6 +978,23 @@ export default function Plan() {
             Planı Kaydet
           </Button>
           
+          {/* Renk Seçimi */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Nokta Rengi:</span>
+            <div className="flex gap-1">
+              {colorOptions.map((color) => (
+                <button
+                  key={color.value}
+                  className={`w-6 h-6 rounded-full ${color.class} border-2 ${
+                    pointColor === color.value ? "border-white shadow-lg scale-110" : "border-transparent opacity-70"
+                  } transition-all duration-200`}
+                  onClick={() => setPointColor(color.value)}
+                  title={color.label}
+                />
+              ))}
+            </div>
+          </div>
+
           {/* Resim yükleme */}
           <div>
             <Input
@@ -1090,8 +1108,8 @@ export default function Plan() {
                         rounded-full w-8 h-8 flex items-center justify-center cursor-pointer 
                         transition-all duration-300 relative
                         ${point.hasNotes || point.hasImages 
-                          ? "bg-green-600 text-white shadow-lg" 
-                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                          ? `bg-${point.color || 'green'}-600 text-white shadow-lg` 
+                          : `bg-${point.color || 'primary'} text-white hover:bg-${point.color || 'primary'}/90`
                         }
                       `}
                     >
@@ -1100,9 +1118,9 @@ export default function Plan() {
                       {/* Ses dalgası animasyonu */}
                       {(point.hasNotes || point.hasImages) && (
                         <>
-                          <span className="absolute w-8 h-8 bg-green-400 rounded-full animate-ping opacity-75"></span>
-                          <span className="absolute w-12 h-12 border-2 border-green-400 rounded-full animate-pulse opacity-50"></span>
-                          <span className="absolute w-16 h-16 border border-green-300 rounded-full animate-pulse opacity-30"></span>
+                          <span className={`absolute w-8 h-8 bg-${point.color || 'green'}-400 rounded-full animate-ping opacity-75`}></span>
+                          <span className={`absolute w-12 h-12 border-2 border-${point.color || 'green'}-400 rounded-full animate-pulse opacity-50`}></span>
+                          <span className={`absolute w-16 h-16 border border-${point.color || 'green'}-300 rounded-full animate-pulse opacity-30`}></span>
                         </>
                       )}
                     </div>
