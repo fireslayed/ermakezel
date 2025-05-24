@@ -168,26 +168,7 @@ export function ReportForm({
                 boxSizing: 'border-box',
                 overflowX: 'hidden'
               }}>
-                <style dangerouslySetInnerHTML={{ __html: `
-                  .ck-editor__editable_inline {
-                    max-height: 300px;
-                    overflow-y: auto;
-                  }
-                  .ck.ck-editor__main>.ck-editor__editable {
-                    width: 100%;
-                  }
-                  .ck.ck-toolbar {
-                    flex-wrap: wrap;
-                    width: 100% !important;
-                  }
-                  .ck.ck-editor {
-                    width: 100% !important;
-                    max-width: 100%;
-                  }
-                  .ck.ck-reset.ck-editor.ck-rounded-corners {
-                    max-width: 100%;
-                  }
-                `}</style>
+{/* CKEditor stilleri artık harici CSS dosyasında */}
                 <CKEditor
                   editor={ClassicEditor}
                   data={formData.description || ""}
