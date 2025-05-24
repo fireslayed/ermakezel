@@ -1,11 +1,13 @@
 import { 
-  users, tasks, projects, reports, parts, plans,
+  users, tasks, projects, reports, parts, plans, planUsers, taskAssignments,
   type User, type InsertUser,
   type Task, type InsertTask,
   type Project, type InsertProject,
   type Report, type InsertReport,
   type Part, type InsertPart,
-  type Plan, type InsertPlan
+  type Plan, type InsertPlan,
+  type PlanUser, type InsertPlanUser,
+  type TaskAssignment, type InsertTaskAssignment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sql } from "drizzle-orm";
@@ -16,6 +18,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>; // Yeni: Tüm kullanıcıları getir (root için)
   
   // Task operations
   getTasks(userId: number): Promise<Task[]>;
@@ -23,6 +26,7 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<InsertTask>): Promise<Task | undefined>;
   deleteTask(id: number): Promise<boolean>;
+  getAssignedTasks(userId: number): Promise<(Task & { assignedUsers: User[] })[]>; // Kullanıcıya atanmış görevleri getir
   
   // Project operations
   getProjects(userId: number): Promise<Project[]>;
@@ -53,6 +57,19 @@ export interface IStorage {
   createPlan(plan: InsertPlan): Promise<Plan>;
   updatePlan(id: number, plan: Partial<InsertPlan>): Promise<Plan | undefined>;
   deletePlan(id: number): Promise<boolean>;
+  getAssignedPlans(userId: number): Promise<Plan[]>; // Kullanıcıya atanmış planları getir
+  
+  // Plan-User operations (Yeni)
+  assignPlanToUser(planId: number, userId: number, assignedBy: number): Promise<PlanUser>;
+  removePlanFromUser(planId: number, userId: number): Promise<boolean>;
+  getPlanUsers(planId: number): Promise<User[]>; // Bir plana atanmış kullanıcıları getir
+  
+  // Task Assignment operations (Yeni)
+  assignTaskToUsers(taskId: number, userIds: number[], assignedBy: number): Promise<TaskAssignment[]>;
+  removeTaskAssignment(taskId: number, userId: number): Promise<boolean>;
+  updateTaskAssignmentStatus(taskId: number, userId: number, status: string, notes?: string): Promise<TaskAssignment | undefined>;
+  getTaskAssignments(taskId: number): Promise<TaskAssignment[]>;
+  getTaskAssignedUsers(taskId: number): Promise<User[]>;
   
   // Dashboard stats
   getTaskStats(userId: number): Promise<{
@@ -83,6 +100,10 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
   // Task operations
   async getTasks(userId: number): Promise<Task[]> {
     return await db.select().from(tasks).where(eq(tasks.userId, userId));
@@ -94,9 +115,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createTask(insertTask: InsertTask): Promise<Task> {
+    const now = new Date();
+    const taskData = {
+      ...insertTask,
+      createdAt: now,
+      updatedAt: now
+    };
+    
     const [task] = await db
       .insert(tasks)
-      .values(insertTask)
+      .values(taskData)
       .returning();
     return task;
   }
@@ -104,15 +132,56 @@ export class DatabaseStorage implements IStorage {
   async updateTask(id: number, taskUpdate: Partial<InsertTask>): Promise<Task | undefined> {
     const result = await db
       .update(tasks)
-      .set(taskUpdate)
+      .set({
+        ...taskUpdate,
+        updatedAt: new Date()
+      })
       .where(eq(tasks.id, id))
       .returning();
     return result.length > 0 ? result[0] : undefined;
   }
   
   async deleteTask(id: number): Promise<boolean> {
+    // Önce görev atamalarını silelim
+    await db.delete(taskAssignments).where(eq(taskAssignments.taskId, id));
+    // Sonra görevi silelim
     const result = await db.delete(tasks).where(eq(tasks.id, id)).returning();
     return result.length > 0;
+  }
+  
+  // Kullanıcıya atanmış görevleri getir
+  async getAssignedTasks(userId: number): Promise<(Task & { assignedUsers: User[] })[]> {
+    // Kullanıcıya atanmış görevleri al
+    const assignments = await db
+      .select()
+      .from(taskAssignments)
+      .where(eq(taskAssignments.userId, userId));
+    
+    if (assignments.length === 0) {
+      return [];
+    }
+    
+    // Görev ID'lerini topla
+    const taskIds = assignments.map(assignment => assignment.taskId);
+    
+    // Görevleri al
+    const tasksResult = await Promise.all(
+      taskIds.map(async (taskId) => {
+        const task = await this.getTask(taskId);
+        if (!task) return null;
+        
+        // Bu göreve atanmış tüm kullanıcıları al
+        const assignedUsers = await this.getTaskAssignedUsers(taskId);
+        
+        return {
+          ...task,
+          assignedUsers
+        };
+      })
+    );
+    
+    // null olanları filtrele
+    return tasksResult.filter(task => task !== null) as (Task & { assignedUsers: User[] })[];
   }
   
   // Project operations

@@ -1,0 +1,70 @@
+Görev: Plan Üzerinden Görev Atama Sistemi (Task Assignment)
+📌 Genel Yapı:
+Sistemde önceden kaydedilmiş planlar var.
+
+Bu planlara birden fazla kullanıcı atanabilir.
+
+Sadece atanmış kullanıcılar o planı görebilir ve görev alabilir.
+
+Sadece root (admin) tüm planları ve görevleri görebilir ve yönetebilir.
+
+✅ "Görevler" (Tasks) Bölümünün Özellikleri:
+1️⃣ Menüde “Görevler” sayfası olacak
+Kullanıcı veya root bu sayfadan görevleri görecek
+
+Root için tüm görevler listelenir
+
+Normal kullanıcı sadece kendisine atanmış görevleri görebilir
+
+2️⃣ Görev Ekleme: (Add Task → Görevlendir)
+Add Task butonuna basıldığında aşağıdaki bilgilerle görev atanmalı:
+
+🧾 Gerekli Alanlar:
+Görev Adı
+
+Plan Seçimi: Sadece sistemde var olan planlardan biri seçilir
+
+Kime atanacak: Kullanıcı listesi (bir veya birden fazla kullanıcı seçilebilir)
+
+Açıklama / Notlar
+
+Öncelik / Tarih (isteğe bağlı)
+
+Root bir görevi birden fazla kullanıcıya atayabilir.
+Örnek: Plan A → Ahmet, Ayşe, Mehmet
+
+3️⃣ Görünürlük Kuralları:
+Kullanıcı	Ne Görür?
+Root	Tüm planlar, tüm görevler
+Normal Kullanıcı	Sadece kendisine atanmış planları ve görevleri
+
+Kullanıcı sisteme giriş yaptığında sadece kendi görev listesi açılmalı
+
+🔐 Yetki Sistemi (İleride Geliştirilecek):
+Root görev atar, siler, günceller
+
+Kullanıcı sadece görev durumu güncelleyebilir (örnek: Başladı / Bitti)
+
+Her görev tamamlandığında root’a bildirim gidebilir (opsiyonel)
+
+💡 Ekstra Akıl / Geliştirme Önerisi:
+Görevin planla bağlantısı net olmalı (örnek: "Plan X kapsamında şu görev")
+
+Görev detayına tıklanınca planın resmi ve açıklaması açılabilir
+
+Görev listesinde durum (aktif, tamamlandı) görünsün
+
+Kullanıcı görevine dosya, not ekleyebilsin (ileride eklenebilir)
+
+🧠 Yapay Zekaya Böyle Komut Ver:
+“Görevler” bölümünde sadece root yeni görev atayabilir.
+Her görev, var olan bir planla ilişkilendirilecek ve seçilen kullanıcılara atanacak.
+Kullanıcılar sadece kendilerine tanımlanmış planlara ait görevleri görebilecek.
+“Add Task” butonu ile görev oluşturulurken:
+
+Plan seçilir
+
+Bir veya daha fazla kullanıcı atanır
+
+Görev adı ve açıklama girilir
+Görevler liste halinde gösterilecek. Root tüm görevleri görebilecek.

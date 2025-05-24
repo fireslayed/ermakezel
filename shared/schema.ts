@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, real, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, real, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User model
 export const users = pgTable("users", {
@@ -21,18 +22,21 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull(), // Görevi oluşturan kullanıcı (genellikle root/admin)
   projectId: integer("project_id"),
+  planId: integer("plan_id").references(() => plans.id, { onDelete: "set null" }), // Görevin bağlı olduğu plan
   status: text("status").notNull().default("pending"),
   priority: text("priority").notNull().default("medium"),
   dueDate: timestamp("due_date"),
   completed: boolean("completed").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
 // Project model
@@ -147,7 +151,92 @@ export const insertPlanSchema = createInsertSchema(plans).omit({
 });
 
 export type LoginCredentials = z.infer<typeof loginSchema>;
+// Plan-User ilişkisi (hangi planların hangi kullanıcılara atandığını takip etmek için)
+export const planUsers = pgTable("plan_users", {
+  planId: integer("plan_id").notNull().references(() => plans.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  assignedBy: integer("assigned_by").notNull().references(() => users.id), // Atamayı yapan kullanıcı (genellikle root/admin)
+  assignedAt: timestamp("assigned_at").defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.planId, table.userId] })
+  }
+});
+
+export const insertPlanUserSchema = createInsertSchema(planUsers);
+
+// Task modelini güncelliyoruz (görev atama sistemi için)
+export const taskAssignments = pgTable("task_assignments", {
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  assignedBy: integer("assigned_by").notNull().references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.taskId, table.userId] })
+  }
+});
+
+export const insertTaskAssignmentSchema = createInsertSchema(taskAssignments).omit({
+  assignedAt: true,
+  completedAt: true,
+});
+
+// İlişkileri tanımlıyoruz
+export const usersRelations = relations(users, ({ many }) => ({
+  assignedPlans: many(planUsers),
+  assignedTasks: many(taskAssignments),
+  createdTasks: many(tasks, { relationName: "createdBy" }),
+}));
+
+export const plansRelations = relations(plans, ({ many }) => ({
+  assignedUsers: many(planUsers),
+  tasks: many(tasks),
+}));
+
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [tasks.userId],
+    references: [users.id],
+    relationName: "createdBy"
+  }),
+  assignedTo: many(taskAssignments),
+  plan: one(plans, {
+    fields: [tasks.planId],
+    references: [plans.id]
+  }),
+}));
+
+export const planUsersRelations = relations(planUsers, ({ one }) => ({
+  user: one(users, {
+    fields: [planUsers.userId],
+    references: [users.id]
+  }),
+  plan: one(plans, {
+    fields: [planUsers.planId],
+    references: [plans.id]
+  }),
+}));
+
+export const taskAssignmentsRelations = relations(taskAssignments, ({ one }) => ({
+  user: one(users, {
+    fields: [taskAssignments.userId],
+    references: [users.id]
+  }),
+  task: one(tasks, {
+    fields: [taskAssignments.taskId],
+    references: [tasks.id]
+  }),
+}));
+
 export type Part = typeof parts.$inferSelect;
 export type InsertPart = z.infer<typeof insertPartSchema>;
 export type Plan = typeof plans.$inferSelect;
 export type InsertPlan = z.infer<typeof insertPlanSchema>;
+export type PlanUser = typeof planUsers.$inferSelect;
+export type InsertPlanUser = z.infer<typeof insertPlanUserSchema>;
+export type TaskAssignment = typeof taskAssignments.$inferSelect;
+export type InsertTaskAssignment = z.infer<typeof insertTaskAssignmentSchema>;
