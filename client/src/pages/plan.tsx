@@ -393,9 +393,9 @@ export default function Plan() {
                 key={point.id}
                 className={`absolute w-5 h-5 -ml-2.5 -mt-2.5 rounded-full flex items-center justify-center cursor-pointer z-10 ${
                   point.hasNotes && point.hasImages
-                    ? "bg-red-500 animate-pulse"
+                    ? "bg-red-500 animate-wave"
                     : point.hasNotes
-                    ? "bg-yellow-500 animate-pulse"
+                    ? "bg-yellow-500 animate-wave-yellow"
                     : "bg-blue-500"
                 }`}
                 style={{ left: `${point.x}px`, top: `${point.y}px` }}
