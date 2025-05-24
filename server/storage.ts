@@ -184,6 +184,110 @@ export class DatabaseStorage implements IStorage {
     return tasksResult.filter(task => task !== null) as (Task & { assignedUsers: User[] })[];
   }
   
+  // Görev atama işlemleri
+  async assignTaskToUsers(taskId: number, userIds: number[], assignedBy: number): Promise<TaskAssignment[]> {
+    const assignments: TaskAssignment[] = [];
+    
+    for (const userId of userIds) {
+      // Daha önce atanmış mı kontrol et
+      const existing = await db
+        .select()
+        .from(taskAssignments)
+        .where(and(
+          eq(taskAssignments.taskId, taskId),
+          eq(taskAssignments.userId, userId)
+        ));
+      
+      // Eğer atanmamışsa ekle
+      if (existing.length === 0) {
+        const [assignment] = await db
+          .insert(taskAssignments)
+          .values({
+            taskId,
+            userId,
+            assignedBy,
+            assignedAt: new Date(),
+            status: "pending",
+          })
+          .returning();
+        
+        assignments.push(assignment);
+      }
+    }
+    
+    return assignments;
+  }
+  
+  async removeTaskAssignment(taskId: number, userId: number): Promise<boolean> {
+    const result = await db
+      .delete(taskAssignments)
+      .where(and(
+        eq(taskAssignments.taskId, taskId),
+        eq(taskAssignments.userId, userId)
+      ))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
+  async updateTaskAssignmentStatus(taskId: number, userId: number, status: string, notes?: string): Promise<TaskAssignment | undefined> {
+    const updateData: any = {
+      status
+    };
+    
+    if (status === "completed") {
+      updateData.completedAt = new Date();
+    }
+    
+    if (notes) {
+      updateData.notes = notes;
+    }
+    
+    const [updated] = await db
+      .update(taskAssignments)
+      .set(updateData)
+      .where(and(
+        eq(taskAssignments.taskId, taskId),
+        eq(taskAssignments.userId, userId)
+      ))
+      .returning();
+    
+    return updated;
+  }
+  
+  async getTaskAssignments(taskId: number): Promise<TaskAssignment[]> {
+    return await db
+      .select()
+      .from(taskAssignments)
+      .where(eq(taskAssignments.taskId, taskId));
+  }
+  
+  async getTaskAssignedUsers(taskId: number): Promise<User[]> {
+    // Bu göreve atanmış kullanıcı ID'lerini bul
+    const assignments = await db
+      .select()
+      .from(taskAssignments)
+      .where(eq(taskAssignments.taskId, taskId));
+    
+    if (assignments.length === 0) {
+      return [];
+    }
+    
+    // Kullanıcı ID'lerini topla
+    const userIds = assignments.map(assignment => assignment.userId);
+    
+    // Kullanıcıları getir
+    const usersResult = await Promise.all(
+      userIds.map(async (userId) => {
+        const user = await this.getUser(userId);
+        return user;
+      })
+    );
+    
+    // null/undefined olanları filtrele
+    return usersResult.filter(user => user !== undefined) as User[];
+  }
+  
   // Project operations
   async getProjects(userId: number): Promise<Project[]> {
     return await db.select().from(projects).where(eq(projects.userId, userId));
@@ -435,7 +539,14 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createPlan(insertPlan: InsertPlan): Promise<Plan> {
-    const [plan] = await db.insert(plans).values(insertPlan).returning();
+    const now = new Date();
+    const planData = {
+      ...insertPlan,
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    const [plan] = await db.insert(plans).values(planData).returning();
     return plan;
   }
   
@@ -452,8 +563,98 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deletePlan(id: number): Promise<boolean> {
+    // İlişkili görevleri de silelim
+    const relatedTasks = await db.select().from(tasks).where(eq(tasks.planId, id));
+    for (const task of relatedTasks) {
+      await this.deleteTask(task.id);
+    }
+    
+    // Önce planın atamalarını silelim
+    await db.delete(planUsers).where(eq(planUsers.planId, id));
+    
+    // Sonra planı silelim
     const result = await db.delete(plans).where(eq(plans.id, id)).returning();
     return result.length > 0;
+  }
+  
+  // Kullanıcıya atanmış planları getir
+  async getAssignedPlans(userId: number): Promise<Plan[]> {
+    // Kullanıcıya atanmış planları bul
+    const assignments = await db
+      .select()
+      .from(planUsers)
+      .where(eq(planUsers.userId, userId));
+    
+    if (assignments.length === 0) {
+      return [];
+    }
+    
+    // Plan ID'lerini topla
+    const planIds = assignments.map(assignment => assignment.planId);
+    
+    // Planları getir
+    const plans = await Promise.all(
+      planIds.map(async (planId) => {
+        const plan = await this.getPlan(planId);
+        return plan;
+      })
+    );
+    
+    // null/undefined olanları filtrele
+    return plans.filter(plan => plan !== undefined) as Plan[];
+  }
+  
+  // Plan-User ilişkisi işlemleri
+  async assignPlanToUser(planId: number, userId: number, assignedBy: number): Promise<PlanUser> {
+    const [assignment] = await db
+      .insert(planUsers)
+      .values({
+        planId,
+        userId,
+        assignedBy,
+        assignedAt: new Date()
+      })
+      .returning();
+    
+    return assignment;
+  }
+  
+  async removePlanFromUser(planId: number, userId: number): Promise<boolean> {
+    const result = await db
+      .delete(planUsers)
+      .where(and(
+        eq(planUsers.planId, planId),
+        eq(planUsers.userId, userId)
+      ))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
+  async getPlanUsers(planId: number): Promise<User[]> {
+    // Bu plana atanmış kullanıcı ID'lerini bul
+    const assignments = await db
+      .select()
+      .from(planUsers)
+      .where(eq(planUsers.planId, planId));
+    
+    if (assignments.length === 0) {
+      return [];
+    }
+    
+    // Kullanıcı ID'lerini topla
+    const userIds = assignments.map(assignment => assignment.userId);
+    
+    // Kullanıcıları getir
+    const users = await Promise.all(
+      userIds.map(async (userId) => {
+        const user = await this.getUser(userId);
+        return user;
+      })
+    );
+    
+    // null/undefined olanları filtrele
+    return users.filter(user => user !== undefined) as User[];
   }
 
   // Initialize demo data if needed

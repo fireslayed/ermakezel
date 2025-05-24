@@ -8,7 +8,9 @@ import {
   insertUserSchema,
   insertReportSchema,
   insertPartSchema,
-  insertPlanSchema
+  insertPlanSchema,
+  insertPlanUserSchema,
+  insertTaskAssignmentSchema
 } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
@@ -752,6 +754,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting plan:', error);
       res.status(500).json({ message: 'Plan silinirken hata oluştu' });
+    }
+  });
+
+  // Kullanıcı listeleme (sadece root için)
+  app.get('/api/users', requireAuth, async (req, res) => {
+    try {
+      // İlk kullanıcı (id=1) root kabul edilir
+      if (req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok. Sadece yönetici kullanıcılar erişebilir.' });
+      }
+      
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: 'Kullanıcı listesi alınamadı' });
+    }
+  });
+
+  // Plan-User ilişkisi rotaları
+  app.get('/api/plans/assigned', requireAuth, async (req, res) => {
+    try {
+      // Kullanıcıya atanmış planları getir
+      const plans = await storage.getAssignedPlans(req.session.userId!);
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ message: 'Atanmış planlar alınamadı' });
+    }
+  });
+  
+  app.get('/api/plans/:planId/users', requireAuth, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.planId);
+      if (isNaN(planId)) {
+        return res.status(400).json({ message: 'Geçersiz plan ID' });
+      }
+      
+      // Plan sahibi veya root ise izin ver
+      const plan = await storage.getPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Plan bulunamadı' });
+      }
+      
+      if (plan.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const users = await storage.getPlanUsers(planId);
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: 'Plan kullanıcıları alınamadı' });
+    }
+  });
+  
+  app.post('/api/plans/:planId/users', requireAuth, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.planId);
+      if (isNaN(planId)) {
+        return res.status(400).json({ message: 'Geçersiz plan ID' });
+      }
+      
+      // Plan sahibi veya root ise izin ver
+      const plan = await storage.getPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Plan bulunamadı' });
+      }
+      
+      if (plan.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const { userId } = req.body;
+      if (!userId || typeof userId !== 'number') {
+        return res.status(400).json({ message: 'Geçerli bir kullanıcı ID gerekli' });
+      }
+      
+      // Kullanıcı gerçekten var mı kontrol et
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+      }
+      
+      const planUser = await storage.assignPlanToUser(planId, userId, req.session.userId!);
+      res.status(201).json(planUser);
+    } catch (error) {
+      res.status(500).json({ message: 'Kullanıcı plana atanamadı' });
+    }
+  });
+  
+  app.delete('/api/plans/:planId/users/:userId', requireAuth, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.planId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(planId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Geçersiz ID değerleri' });
+      }
+      
+      // Plan sahibi veya root ise izin ver
+      const plan = await storage.getPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Plan bulunamadı' });
+      }
+      
+      if (plan.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const success = await storage.removePlanFromUser(planId, userId);
+      if (success) {
+        res.json({ message: 'Kullanıcı plandan başarıyla çıkarıldı' });
+      } else {
+        res.status(404).json({ message: 'Plan-kullanıcı ilişkisi bulunamadı' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Kullanıcı plandan çıkarılamadı' });
+    }
+  });
+  
+  // Görev atama rotaları
+  app.get('/api/tasks/assigned', requireAuth, async (req, res) => {
+    try {
+      // Kullanıcıya atanmış görevleri getir
+      const tasks = await storage.getAssignedTasks(req.session.userId!);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: 'Atanmış görevler alınamadı' });
+    }
+  });
+  
+  app.get('/api/tasks/:taskId/assignments', requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: 'Geçersiz görev ID' });
+      }
+      
+      // Görev sahibi veya root ise izin ver
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: 'Görev bulunamadı' });
+      }
+      
+      if (task.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const assignments = await storage.getTaskAssignments(taskId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: 'Görev atamaları alınamadı' });
+    }
+  });
+  
+  app.get('/api/tasks/:taskId/users', requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: 'Geçersiz görev ID' });
+      }
+      
+      // Görev sahibi veya root ise izin ver
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: 'Görev bulunamadı' });
+      }
+      
+      if (task.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const users = await storage.getTaskAssignedUsers(taskId);
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: 'Görev kullanıcıları alınamadı' });
+    }
+  });
+  
+  app.post('/api/tasks/:taskId/assign', requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: 'Geçersiz görev ID' });
+      }
+      
+      // Görev sahibi veya root ise izin ver
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: 'Görev bulunamadı' });
+      }
+      
+      if (task.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const { userIds } = req.body;
+      if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ message: 'En az bir kullanıcı ID\'si gerekli' });
+      }
+      
+      const assignments = await storage.assignTaskToUsers(taskId, userIds, req.session.userId!);
+      res.status(201).json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: 'Görev atanamadı' });
+    }
+  });
+  
+  app.delete('/api/tasks/:taskId/users/:userId', requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(taskId) || isNaN(userId)) {
+        return res.status(400).json({ message: 'Geçersiz ID değerleri' });
+      }
+      
+      // Görev sahibi veya root ise izin ver
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: 'Görev bulunamadı' });
+      }
+      
+      if (task.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const success = await storage.removeTaskAssignment(taskId, userId);
+      if (success) {
+        res.json({ message: 'Görev ataması başarıyla kaldırıldı' });
+      } else {
+        res.status(404).json({ message: 'Görev-kullanıcı ilişkisi bulunamadı' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Görev ataması kaldırılamadı' });
+    }
+  });
+  
+  app.patch('/api/tasks/:taskId/status', requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: 'Geçersiz görev ID' });
+      }
+      
+      // Bu görev kullanıcıya atanmış mı kontrol et
+      const assignments = await storage.getTaskAssignments(taskId);
+      const userAssignment = assignments.find(a => a.userId === req.session.userId);
+      
+      if (!userAssignment) {
+        return res.status(403).json({ message: 'Bu görev size atanmamış' });
+      }
+      
+      const { status, notes } = req.body;
+      if (!status || typeof status !== 'string' || !['pending', 'in_progress', 'completed'].includes(status)) {
+        return res.status(400).json({ message: 'Geçerli bir durum değeri gerekli: pending, in_progress veya completed' });
+      }
+      
+      const updated = await storage.updateTaskAssignmentStatus(
+        taskId, 
+        req.session.userId!, 
+        status, 
+        notes
+      );
+      
+      if (updated) {
+        res.json(updated);
+      } else {
+        res.status(404).json({ message: 'Görev ataması bulunamadı' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Görev durumu güncellenemedi' });
     }
   });
 
