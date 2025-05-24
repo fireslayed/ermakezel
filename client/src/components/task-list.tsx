@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MoreVertical, Edit, Trash, AlertCircle } from "lucide-react";
+import { ExportButtons } from "./export-buttons";
 import { TaskForm } from "./task-form";
 import { useState } from "react";
 
@@ -124,6 +125,14 @@ export function TaskList() {
   
   return (
     <>
+      <div className="flex justify-between items-center mb-4">
+        <div></div>
+        <ExportButtons 
+          data={tasks || []} 
+          fileName="gorevler" 
+          pdfTitle="Görevler Listesi" 
+        />
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
