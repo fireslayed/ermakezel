@@ -4,6 +4,8 @@ import {
   type Task, type InsertTask,
   type Project, type InsertProject
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -34,155 +36,156 @@ export interface IStorage {
   }>;
 }
 
-export class MemStorage implements IStorage {
-  private usersData: Map<number, User>;
-  private tasksData: Map<number, Task>;
-  private projectsData: Map<number, Project>;
-  private userIdCounter: number;
-  private taskIdCounter: number;
-  private projectIdCounter: number;
-
-  constructor() {
-    this.usersData = new Map();
-    this.tasksData = new Map();
-    this.projectsData = new Map();
-    this.userIdCounter = 1;
-    this.taskIdCounter = 1;
-    this.projectIdCounter = 1;
-    
-    // Add a demo user
-    const demoUser: User = {
-      id: this.userIdCounter++,
-      username: 'ermak',
-      password: 'ermak', // In a real app, this would be hashed
-      fullName: 'Demo User'
-    };
-    this.usersData.set(demoUser.id, demoUser);
-    
-    // Add some demo projects
-    const projects = [
-      { name: 'Work Tasks', description: 'Professional tasks and deadlines', color: '#6366f1', userId: demoUser.id },
-      { name: 'Personal', description: 'Personal errands and tasks', color: '#10b981', userId: demoUser.id },
-      { name: 'Learning', description: 'Educational goals and courses', color: '#f59e0b', userId: demoUser.id }
-    ];
-    
-    projects.forEach(project => {
-      this.createProject({
-        name: project.name,
-        description: project.description,
-        color: project.color,
-        userId: project.userId
-      });
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.usersData.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.usersData.values()).find(
-      user => user.username.toLowerCase() === username.toLowerCase()
-    );
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const now = new Date();
-    const user: User = { ...insertUser, id };
-    this.usersData.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
 
   // Task operations
   async getTasks(userId: number): Promise<Task[]> {
-    return Array.from(this.tasksData.values()).filter(
-      task => task.userId === userId
-    );
+    return await db.select().from(tasks).where(eq(tasks.userId, userId));
   }
 
   async getTask(id: number): Promise<Task | undefined> {
-    return this.tasksData.get(id);
+    const result = await db.select().from(tasks).where(eq(tasks.id, id));
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const id = this.taskIdCounter++;
-    const now = new Date();
-    const task: Task = { 
-      ...insertTask, 
-      id, 
-      createdAt: now
+    const taskWithDefaults = {
+      ...insertTask,
+      createdAt: new Date()
     };
-    this.tasksData.set(id, task);
-    return task;
+    const result = await db.insert(tasks).values(taskWithDefaults).returning();
+    return result[0];
   }
 
   async updateTask(id: number, taskUpdate: Partial<InsertTask>): Promise<Task | undefined> {
-    const task = this.tasksData.get(id);
-    if (!task) return undefined;
-    
-    const updatedTask = { ...task, ...taskUpdate };
-    this.tasksData.set(id, updatedTask);
-    return updatedTask;
+    const result = await db.update(tasks)
+      .set(taskUpdate)
+      .where(eq(tasks.id, id))
+      .returning();
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async deleteTask(id: number): Promise<boolean> {
-    return this.tasksData.delete(id);
+    const result = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+    return result.length > 0;
   }
 
   // Project operations
   async getProjects(userId: number): Promise<Project[]> {
-    return Array.from(this.projectsData.values()).filter(
-      project => project.userId === userId
-    );
+    return await db.select().from(projects).where(eq(projects.userId, userId));
   }
 
   async getProject(id: number): Promise<Project | undefined> {
-    return this.projectsData.get(id);
+    const result = await db.select().from(projects).where(eq(projects.id, id));
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
-    const id = this.projectIdCounter++;
-    const now = new Date();
-    const project: Project = { 
-      ...insertProject, 
-      id, 
-      createdAt: now
+    const projectWithDefaults = {
+      ...insertProject,
+      createdAt: new Date()
     };
-    this.projectsData.set(id, project);
-    return project;
+    const result = await db.insert(projects).values(projectWithDefaults).returning();
+    return result[0];
   }
 
   async updateProject(id: number, projectUpdate: Partial<InsertProject>): Promise<Project | undefined> {
-    const project = this.projectsData.get(id);
-    if (!project) return undefined;
-    
-    const updatedProject = { ...project, ...projectUpdate };
-    this.projectsData.set(id, updatedProject);
-    return updatedProject;
+    const result = await db.update(projects)
+      .set(projectUpdate)
+      .where(eq(projects.id, id))
+      .returning();
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async deleteProject(id: number): Promise<boolean> {
-    return this.projectsData.delete(id);
+    const result = await db.delete(projects).where(eq(projects.id, id)).returning();
+    return result.length > 0;
   }
 
   // Dashboard stats
   async getTaskStats(userId: number): Promise<{ total: number; completed: number; pending: number; overdue: number; }> {
-    const userTasks = await this.getTasks(userId);
-    const now = new Date();
+    // Get total tasks
+    const totalResult = await db
+      .select({ count: count() })
+      .from(tasks)
+      .where(eq(tasks.userId, userId));
     
-    const total = userTasks.length;
-    const completed = userTasks.filter(task => task.completed).length;
-    const pending = userTasks.filter(task => !task.completed).length;
-    const overdue = userTasks.filter(task => 
-      !task.completed && 
-      task.dueDate && 
-      new Date(task.dueDate) < now
-    ).length;
+    // Get completed tasks
+    const completedResult = await db
+      .select({ count: count() })
+      .from(tasks)
+      .where(and(
+        eq(tasks.userId, userId),
+        eq(tasks.completed, true)
+      ));
     
-    return { total, completed, pending, overdue };
+    // Get pending tasks
+    const pendingResult = await db
+      .select({ count: count() })
+      .from(tasks)
+      .where(and(
+        eq(tasks.userId, userId),
+        eq(tasks.completed, false)
+      ));
+    
+    // Get overdue tasks
+    const overdueResult = await db
+      .select({ count: count() })
+      .from(tasks)
+      .where(and(
+        eq(tasks.userId, userId),
+        eq(tasks.completed, false),
+        sql`${tasks.dueDate} < NOW()`
+      ));
+    
+    return {
+      total: Number(totalResult[0]?.count || 0),
+      completed: Number(completedResult[0]?.count || 0),
+      pending: Number(pendingResult[0]?.count || 0),
+      overdue: Number(overdueResult[0]?.count || 0)
+    };
+  }
+
+  // Initialize demo data if needed
+  async initializeDemoData(): Promise<void> {
+    // Check if users table is empty
+    const usersCount = await db.select({ count: count() }).from(users);
+    
+    if (Number(usersCount[0]?.count || 0) === 0) {
+      // Create demo user
+      const demoUser = await this.createUser({
+        username: 'ermak',
+        password: 'ermak', // In a real app, this would be hashed
+        fullName: 'Demo User'
+      });
+      
+      // Create demo projects
+      const demoProjects = [
+        { name: 'Work Tasks', description: 'Professional tasks and deadlines', color: '#6366f1', userId: demoUser.id },
+        { name: 'Personal', description: 'Personal errands and tasks', color: '#10b981', userId: demoUser.id },
+        { name: 'Learning', description: 'Educational goals and courses', color: '#f59e0b', userId: demoUser.id }
+      ];
+      
+      for (const project of demoProjects) {
+        await this.createProject(project);
+      }
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
