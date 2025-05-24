@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 
+// Plan sayfasında kullanılan veri tipleri
 interface PlanPoint {
   id: string;
   x: number;
@@ -47,7 +48,8 @@ interface PlanPoint {
   hasImages: boolean;
 }
 
-interface BackgroundImage {
+interface BackgroundImageLayer {
+  id: string;
   url: string;
   x: number;
   y: number;
@@ -223,11 +225,17 @@ export default function Plan() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newNote, setNewNote] = useState("");
   const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
-  const [backgroundImage, setBackgroundImage] = useState<BackgroundImage | null>(null);
   const [imageWidth, setImageWidth] = useState<number>(500);
   const [imageHeight, setImageHeight] = useState<number>(400);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
+  
+  // Arkaplan görüntü katmanları için değişkenler
+  const [backgroundImageLayers, setBackgroundImageLayers] = useState<BackgroundImageLayer[]>([]);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+  const [backgroundImage, setBackgroundImage] = useState<BackgroundImageLayer | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [layerToDelete, setLayerToDelete] = useState<string | null>(null);
   
   // Plan yönetimi için değişkenler
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
@@ -236,28 +244,50 @@ export default function Plan() {
   const [showDeletePlanConfirm, setShowDeletePlanConfirm] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
+  // Parça seçimi için değişkenler
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedParts, setSelectedParts] = useState<string[]>([]);
+  
   // Planları getir
   const { data: plans, isLoading: isLoadingPlans } = useQuery({
     queryKey: ['/api/plans'],
-    onSuccess: (data) => {
-      // Eğer henüz bir plan seçilmediyse ve plan varsa ilk planı seç
-      if (data && Array.isArray(data) && data.length > 0 && !selectedPlanId) {
-        setSelectedPlanId(data[0].id.toString());
-        loadPlan(data[0]);
-      }
-    }
   });
+  
+  // Eğer planlar yüklendiyse ve henüz bir plan seçilmediyse, ilk planı seç
+  useEffect(() => {
+    if (plans && Array.isArray(plans) && plans.length > 0 && !selectedPlanId) {
+      setSelectedPlanId(plans[0].id.toString());
+      loadPlan(plans[0]);
+    }
+  }, [plans, selectedPlanId]);
   
   // Seçili planı getir
   const { data: selectedPlan, isLoading: isLoadingSelectedPlan } = useQuery({
     queryKey: ['/api/plans', selectedPlanId],
     enabled: !!selectedPlanId,
-    onSuccess: (data) => {
-      if (data) {
-        loadPlan(data);
-      }
-    }
   });
+  
+  // Seçili plan değiştiğinde planı yükle
+  useEffect(() => {
+    if (selectedPlan) {
+      loadPlan(selectedPlan);
+    }
+  }, [selectedPlan]);
+  
+  // Parçaları getir
+  const { data: parts, isLoading: isLoadingParts } = useQuery({
+    queryKey: ['/api/parts'],
+    retry: 1,
+  });
+  
+  // Filtreleme fonksiyonu
+  const filteredParts = Array.isArray(parts) ? parts.filter(part => {
+    const query = searchQuery.toLowerCase();
+    return (
+      part.name?.toLowerCase().includes(query) || 
+      part.partNumber?.toLowerCase().includes(query)
+    );
+  }) : [];
   
   // Plan oluşturma
   const createPlanMutation = useMutation({
@@ -442,89 +472,6 @@ export default function Plan() {
     }
   }, [points, backgroundImageLayers]);
   
-  // Parça seçimi için değişkenler
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedParts, setSelectedParts] = useState<string[]>([]);
-  
-  // Parçaları getir
-  const { data: parts, isLoading: isLoadingParts } = useQuery({
-    queryKey: ['/api/parts'],
-    retry: 1,
-  });
-  
-  // Filtreleme fonksiyonu
-  const filteredParts = Array.isArray(parts) ? parts.filter(part => {
-    const query = searchQuery.toLowerCase();
-    return (
-      part.name?.toLowerCase().includes(query) || 
-      part.partNumber?.toLowerCase().includes(query)
-    );
-  }) : [];
-  
-  // Parça seçme işlevi
-  const togglePartSelection = (partId: string) => {
-    setSelectedParts(prev => {
-      if (prev.includes(partId)) {
-        return prev.filter(id => id !== partId);
-      } else {
-        return [...prev, partId];
-      }
-    });
-  };
-  
-  // Parça ekle
-  const handleAddPartToPoint = () => {
-    if (!selectedPoint) return;
-    
-    // Seçili parçaları al
-    const partsToAdd = selectedParts.map(partId => {
-      const part = filteredParts.find(p => p.id.toString() === partId);
-      return part;
-    }).filter(Boolean);
-    
-    if (partsToAdd.length === 0) {
-      toast({
-        title: "Seçim Yapılmadı",
-        description: "Lütfen en az bir parça seçin",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Mevcut noktaya parçaları ekle (notes dizisine)
-    const updatedPoints = points.map(point => {
-      if (point.id === selectedPoint.id) {
-        // Parça bilgilerini not olarak ekle
-        const partNotes = partsToAdd.map(part => (
-          `[PARÇA] ${part.name} (${part.partNumber})` +
-          `${part.category ? ` - Kategori: ${part.category}` : ''}` +
-          `${part.color ? ` - Renk: ${part.color}` : ''}`
-        ));
-        
-        return {
-          ...point,
-          notes: [...point.notes, ...partNotes],
-          hasNotes: true
-        };
-      }
-      return point;
-    });
-    
-    setPoints(updatedPoints);
-    
-    // Seçili noktayı güncelle
-    const updatedPoint = updatedPoints.find(p => p.id === selectedPoint.id);
-    if (updatedPoint) setSelectedPoint(updatedPoint);
-    
-    // Seçilmiş parçaları temizle
-    setSelectedParts([]);
-    
-    toast({
-      title: "Parçalar Eklendi",
-      description: `${partsToAdd.length} parça başarıyla noktaya eklendi`,
-    });
-  };
-
   // Handle toggle buttons
   const handleToggleChange = (value: string) => {
     setActiveTool(activeTool === value ? null : value);
@@ -597,8 +544,8 @@ export default function Plan() {
     if (updatedPoint) setSelectedPoint(updatedPoint);
     
     toast({
-      title: "Note saved",
-      description: editingNoteIndex !== null ? "Note updated successfully" : "Note added successfully",
+      title: "Not kaydedildi",
+      description: editingNoteIndex !== null ? "Not başarıyla güncellendi" : "Not başarıyla eklendi",
     });
   };
 
@@ -620,8 +567,8 @@ export default function Plan() {
     // Check if we already have 4 images
     if (selectedPoint.images.length >= 4) {
       toast({
-        title: "Maximum images reached",
-        description: "You can only upload up to 4 images per point",
+        title: "Maksimum resim sayısına ulaşıldı",
+        description: "Bir nokta için en fazla 4 resim yükleyebilirsiniz",
         variant: "destructive"
       });
       return;
@@ -648,24 +595,10 @@ export default function Plan() {
     if (updatedPoint) setSelectedPoint(updatedPoint);
     
     toast({
-      title: "Image uploaded",
-      description: "Image has been added successfully",
+      title: "Resim yüklendi",
+      description: "Resim başarıyla eklendi",
     });
   };
-
-  interface BackgroundImageLayer {
-    id: string;
-    url: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }
-  
-  const [backgroundImageLayers, setBackgroundImageLayers] = useState<BackgroundImageLayer[]>([]);
-  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [layerToDelete, setLayerToDelete] = useState<string | null>(null);
 
   // Handle background image upload
   const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -692,8 +625,8 @@ export default function Plan() {
     setBackgroundImage(newLayer);
     
     toast({
-      title: "Background image uploaded",
-      description: "New image layer has been added to the canvas",
+      title: "Arkaplan resmi yüklendi",
+      description: "Yeni resim katmanı tuvale eklendi",
     });
   };
   
@@ -738,8 +671,8 @@ export default function Plan() {
     setLayerToDelete(null);
     
     toast({
-      title: "Layer deleted",
-      description: "The image layer has been removed",
+      title: "Katman silindi",
+      description: "Resim katmanı kaldırıldı",
     });
   };
 
@@ -766,58 +699,51 @@ export default function Plan() {
     // Update selected point reference
     const updatedPoint = updatedPoints.find(p => p.id === selectedPoint.id);
     if (updatedPoint) setSelectedPoint(updatedPoint);
-    
-    toast({
-      title: "Image removed",
-      description: "Image has been removed successfully",
-    });
   };
-
+  
   // Handle image resize
   const handleImageResize = () => {
-    if (!backgroundImage || !selectedLayerId) return;
+    if (!selectedLayerId) return;
     
-    // Update the selected layer in our layers array
-    const updatedLayers = backgroundImageLayers.map(layer => {
-      if (layer.id === selectedLayerId) {
-        return {
-          ...layer,
-          width: imageWidth,
-          height: imageHeight
-        };
-      }
-      return layer;
-    });
-    
-    setBackgroundImageLayers(updatedLayers);
-    
-    // Also update the current background image
-    setBackgroundImage({
-      ...backgroundImage,
-      width: imageWidth,
-      height: imageHeight
+    setBackgroundImageLayers(prevLayers => {
+      return prevLayers.map(layer => {
+        if (layer.id === selectedLayerId) {
+          const updatedLayer = {
+            ...layer,
+            width: imageWidth,
+            height: imageHeight
+          };
+          
+          // Also update backgroundImage if this is the selected layer
+          if (backgroundImage?.id === selectedLayerId) {
+            setBackgroundImage(updatedLayer);
+          }
+          
+          return updatedLayer;
+        }
+        return layer;
+      });
     });
     
     toast({
-      title: "Image resized",
-      description: "Background image has been resized",
+      title: "Boyut değiştirildi",
+      description: "Resim boyutu güncellendi",
     });
   };
-
-  // Handle drag for background image
-  const handleImageMouseDown = (e: React.MouseEvent, layerId: string) => {
-    if (activeTool !== "move-image") return;
+  
+  // Handle layer drag
+  const handleLayerDrag = (layerId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    // Find the layer in our layers array
-    const layerIndex = backgroundImageLayers.findIndex(layer => layer.id === layerId);
+    const layerIndex = backgroundImageLayers.findIndex(l => l.id === layerId);
     if (layerIndex === -1) return;
     
     const layer = backgroundImageLayers[layerIndex];
-    
-    const startX = e.clientX;
-    const startY = e.clientY;
     const initialX = layer.x;
     const initialY = layer.y;
+    const startX = e.clientX;
+    const startY = e.clientY;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
@@ -852,14 +778,125 @@ export default function Plan() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  // Parça seçme işlevi
+  const togglePartSelection = (partId: string) => {
+    setSelectedParts(prev => {
+      if (prev.includes(partId)) {
+        return prev.filter(id => id !== partId);
+      } else {
+        return [...prev, partId];
+      }
+    });
+  };
+  
+  // Parça ekle
+  const handleAddPartToPoint = () => {
+    if (!selectedPoint) return;
+    
+    // Seçili parçaları al
+    const partsToAdd = selectedParts.map(partId => {
+      const part = filteredParts.find(p => p.id.toString() === partId);
+      return part;
+    }).filter(Boolean);
+    
+    if (partsToAdd.length === 0) {
+      toast({
+        title: "Seçim Yapılmadı",
+        description: "Lütfen en az bir parça seçin",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Mevcut noktaya parçaları ekle (notes dizisine)
+    const updatedPoints = points.map(point => {
+      if (point.id === selectedPoint.id) {
+        // Parça bilgilerini not olarak ekle
+        const partNotes = partsToAdd.map(part => (
+          `[PARÇA] ${part.name} (${part.partNumber})` +
+          `${part.category ? ` - Kategori: ${part.category}` : ''}` +
+          `${part.color ? ` - Renk: ${part.color}` : ''}`
+        ));
+        
+        return {
+          ...point,
+          notes: [...point.notes, ...partNotes],
+          hasNotes: true
+        };
+      }
+      return point;
+    });
+    
+    setPoints(updatedPoints);
+    
+    // Seçili noktayı güncelle
+    const updatedPoint = updatedPoints.find(p => p.id === selectedPoint.id);
+    if (updatedPoint) setSelectedPoint(updatedPoint);
+    
+    // Seçilmiş parçaları temizle
+    setSelectedParts([]);
+    
+    toast({
+      title: "Parçalar Eklendi",
+      description: `${partsToAdd.length} parça başarıyla noktaya eklendi`,
+    });
+  };
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-3xl font-bold tracking-tight">Plan</h2>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Plan Seçimi */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">Image dimensions:</label>
+            <Select
+              value={selectedPlanId}
+              onValueChange={(value) => setSelectedPlanId(value)}
+              disabled={isLoadingPlans}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Plan seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.isArray(plans) && plans.length > 0 ? (
+                  plans.map((plan: any) => (
+                    <SelectItem key={plan.id} value={plan.id.toString()}>
+                      {plan.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-plans" disabled>
+                    Henüz plan yok
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setShowCreatePlanDialog(true)}
+              title="Yeni plan oluştur"
+            >
+              <FilePlus className="h-4 w-4" />
+            </Button>
+            
+            {selectedPlanId && (
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setShowDeletePlanConfirm(true)}
+                title="Planı sil"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          
+          {/* Resim boyutlandırma kontrolleri */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">Resim boyutları:</label>
             <Input 
               type="number" 
               value={imageWidth} 
@@ -883,10 +920,21 @@ export default function Plan() {
               onClick={handleImageResize}
               disabled={activeTool !== "resize-image" || !selectedLayerId}
             >
-              Apply
+              Uygula
             </Button>
           </div>
           
+          {/* Plan kaydetme */}
+          <Button
+            onClick={savePlan}
+            disabled={!hasUnsavedChanges || (!selectedPlanId && (points.length === 0 && backgroundImageLayers.length === 0))}
+            className={hasUnsavedChanges ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Planı Kaydet
+          </Button>
+          
+          {/* Resim yükleme */}
           <div>
             <Input
               type="file"
@@ -896,176 +944,172 @@ export default function Plan() {
               id="background-image-upload"
             />
             <label htmlFor="background-image-upload">
-              <Button variant="outline" size="sm" asChild>
-                <span>Resim Katmanı Ekle</span>
+              <Button variant="outline" asChild>
+                <span>Resim Yükle</span>
               </Button>
             </label>
           </div>
           
-          {selectedLayerId && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => confirmDeleteLayer(selectedLayerId)}
-              className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-            >
-              Katmanı Sil
-            </Button>
-          )}
+          {/* Katmanlar paneli aç/kapat */}
+          <Button
+            variant="outline"
+            onClick={() => setShowLayersPanel(!showLayersPanel)}
+            className={showLayersPanel ? "bg-secondary" : ""}
+          >
+            <Layers className="mr-2 h-4 w-4" />
+            Katmanlar
+          </Button>
         </div>
       </div>
       
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Canvas Tools</CardTitle>
-          <ToggleGroup type="single" variant="outline" className="justify-start">
-            <ToggleGroupItem 
-              value="move-image" 
-              aria-label="Move Image"
-              onClick={() => handleToggleChange("move-image")}
-              data-state={activeTool === "move-image" ? "on" : "off"}
-            >
-              <Move className="h-4 w-4 mr-2" />
-              Resmi Taşı
-            </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="resize-image" 
-              aria-label="Resize Image"
-              onClick={() => handleToggleChange("resize-image")}
-              data-state={activeTool === "resize-image" ? "on" : "off"}
-            >
-              <Image className="h-4 w-4 mr-2" />
-              Resmi Boyutlandır
-            </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="add-point" 
-              aria-label="Add Point"
-              onClick={() => handleToggleChange("add-point")}
-              data-state={activeTool === "add-point" ? "on" : "off"}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nokta Ekle
-            </ToggleGroupItem>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowLayersPanel(!showLayersPanel)}
-              className="ml-2"
-            >
-              <Layers className="h-4 w-4 mr-2" />
-              {showLayersPanel ? "Katmanları Gizle" : "Katmanları Göster"}
-            </Button>
-          </ToggleGroup>
-        </CardHeader>
-        <CardContent>
-          {showLayersPanel && (
-            <div className="flex space-x-4 mb-4">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium mb-2 flex items-center">
-                  <Layers className="h-4 w-4 mr-1" />
-                  Resim Katmanları
-                </h3>
-                <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
-                  {backgroundImageLayers.length === 0 ? (
-                    <div className="text-sm text-muted-foreground p-2">
-                      Henüz hiç resim katmanı eklenmemiş. Katman eklemek için "Resim Katmanı Ekle" butonuna tıklayın.
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_250px] gap-4">
+        <div className="order-2 md:order-1">
+          <Card>
+            <CardHeader className="py-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Plan Görünümü</CardTitle>
+                <ToggleGroup type="single" value={activeTool} onValueChange={handleToggleChange}>
+                  <ToggleGroupItem value="add-point" aria-label="Add Point">
+                    <Plus className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="move" aria-label="Move">
+                    <Move className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="resize-image" aria-label="Resize Image">
+                    <Image className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div
+                ref={canvasRef}
+                className="bg-secondary/30 relative w-full min-h-[500px] rounded-md overflow-hidden"
+                onClick={handleCanvasClick}
+                style={{ cursor: activeTool === "add-point" ? "crosshair" : "default" }}
+              >
+                {/* Background Image Layers */}
+                {backgroundImageLayers.map((layer) => (
+                  <div
+                    key={layer.id}
+                    className={`absolute transition-all ${
+                      selectedLayerId === layer.id && activeTool === "move"
+                        ? "outline outline-2 outline-primary cursor-move"
+                        : ""
+                    }`}
+                    style={{
+                      left: `${layer.x}px`,
+                      top: `${layer.y}px`,
+                      width: `${layer.width}px`,
+                      height: `${layer.height}px`,
+                      zIndex: selectedLayerId === layer.id ? 10 : 1,
+                    }}
+                    onClick={(e) => {
+                      if (activeTool === "move") {
+                        e.stopPropagation();
+                        setSelectedLayerId(layer.id);
+                        setBackgroundImage(layer);
+                        setImageWidth(layer.width);
+                        setImageHeight(layer.height);
+                      }
+                    }}
+                    onMouseDown={activeTool === "move" ? (e) => handleLayerDrag(layer.id, e) : undefined}
+                  >
+                    <img
+                      src={layer.url}
+                      alt="Background"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ))}
+
+                {/* Plus Points */}
+                {points.map((point) => (
+                  <div
+                    key={point.id}
+                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-20 ${
+                      point.hasNotes || point.hasImages ? "animate-pulse" : ""
+                    }`}
+                    style={{ left: point.x, top: point.y }}
+                    onClick={(e) => handlePointClick(point, e)}
+                  >
+                    <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-primary/90">
+                      <Plus className="h-5 w-5" />
                     </div>
-                  ) : (
-                    backgroundImageLayers.map((layer, index) => (
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Layers Panel */}
+        {showLayersPanel && (
+          <div className="order-1 md:order-2">
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle>Resim Katmanları</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {backgroundImageLayers.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>Henüz hiç resim katmanı eklenmemiş</p>
+                    <p className="text-sm mt-2">Bir resim yüklemek için "Resim Yükle" butonunu kullanın</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {backgroundImageLayers.map((layer) => (
                       <div
                         key={layer.id}
-                        onClick={() => handleSelectLayer(layer.id)}
-                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
-                          selectedLayerId === layer.id 
-                            ? "bg-primary/10 border border-primary/50" 
-                            : "hover:bg-accent"
+                        className={`p-3 rounded-md border transition-colors cursor-pointer ${
+                          selectedLayerId === layer.id ? "border-primary bg-primary/10" : "border-border hover:bg-accent"
                         }`}
+                        onClick={() => handleSelectLayer(layer.id)}
                       >
-                        <div className="flex items-center">
-                          <div 
-                            className="w-6 h-6 mr-2 border border-border overflow-hidden rounded-sm"
-                            style={{ 
-                              backgroundImage: `url(${layer.url})`,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center'
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="h-12 w-12 bg-background rounded overflow-hidden">
+                              <img
+                                src={layer.url}
+                                alt="Layer thumbnail"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium">Katman {backgroundImageLayers.indexOf(layer) + 1}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {layer.width} × {layer.height}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDeleteLayer(layer.id);
                             }}
-                          />
-                          <span className="text-sm font-medium">Katman {index + 1}</span>
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-100/50"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            confirmDeleteLayer(layer.id);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          <div 
-            ref={canvasRef} 
-            className="relative w-full h-[600px] border border-border rounded-md overflow-hidden bg-gray-50 dark:bg-gray-900"
-            onClick={handleCanvasClick}
-          >
-            {/* Background Image Layers */}
-            {backgroundImageLayers.map((layer) => (
-              <div 
-                key={layer.id}
-                className={`absolute cursor-move ${selectedLayerId === layer.id ? 'ring-2 ring-primary' : ''}`}
-                style={{
-                  left: `${layer.x}px`,
-                  top: `${layer.y}px`,
-                  width: `${layer.width}px`,
-                  height: `${layer.height}px`,
-                  zIndex: selectedLayerId === layer.id ? 5 : 1 // Higher z-index for selected layer
-                }}
-                onMouseDown={(e) => handleImageMouseDown(e, layer.id)}
-                onClick={() => handleSelectLayer(layer.id)}
-              >
-                <img 
-                  src={layer.url} 
-                  alt={`Layer ${layer.id}`} 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ))}
-            
-            {/* Points */}
-            {points.map((point) => (
-              <div
-                key={point.id}
-                className={`absolute w-5 h-5 -ml-2.5 -mt-2.5 rounded-full flex items-center justify-center cursor-pointer z-10 ${
-                  point.hasNotes && point.hasImages
-                    ? "bg-red-500 animate-wave"
-                    : point.hasNotes
-                    ? "bg-yellow-500 animate-wave-yellow"
-                    : "bg-blue-500"
-                }`}
-                style={{ left: `${point.x}px`, top: `${point.y}px` }}
-                onClick={(e) => handlePointClick(point, e)}
-              >
-                <Plus className="h-3 w-3 text-white" />
-              </div>
-            ))}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Delete Layer Confirmation Dialog */}
+        )}
+      </div>
+
+      {/* Delete Layer Confirm Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Resim Katmanını Sil</AlertDialogTitle>
+            <AlertDialogTitle>Katmanı sil?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu resim katmanını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              Bu katmanı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1074,14 +1118,63 @@ export default function Plan() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Create Plan Dialog */}
+      <Dialog open={showCreatePlanDialog} onOpenChange={setShowCreatePlanDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Yeni Plan Oluştur</DialogTitle>
+            <DialogDescription>
+              Plan için bir ad girin. Bu ad planı tanımlamak için kullanılacaktır.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="plan-name" className="text-sm font-medium">
+                Plan Adı
+              </label>
+              <Input
+                id="plan-name"
+                placeholder="Örn. Plan 1, Üretim Planı, vb."
+                value={newPlanName}
+                onChange={(e) => setNewPlanName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreatePlanDialog(false)}>
+              İptal
+            </Button>
+            <Button onClick={handleCreatePlan} disabled={!newPlanName.trim()}>
+              Oluştur
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Plan Confirm Dialog */}
+      <AlertDialog open={showDeletePlanConfirm} onOpenChange={setShowDeletePlanConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Planı sil?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu planı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm plan içeriği silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeletePlanConfirm(false)}>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePlan}>Sil</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Point Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Point Details</DialogTitle>
+            <DialogTitle>Nokta Detayları</DialogTitle>
             <DialogDescription>
-              Add notes and images to this point
+              Bu noktaya notlar ve resimler ekleyin
             </DialogDescription>
           </DialogHeader>
           
@@ -1095,30 +1188,30 @@ export default function Plan() {
             <TabsContent value="notes" className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Textarea
-                  placeholder="Enter a note..."
+                  placeholder="Bir not girin..."
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   className="min-h-[100px]"
                 />
                 <Button onClick={handleAddNote}>
-                  {editingNoteIndex !== null ? "Update Note" : "Add Note"}
+                  {editingNoteIndex !== null ? "Notu Güncelle" : "Not Ekle"}
                 </Button>
               </div>
               
               {selectedPoint?.notes.length ? (
                 <div className="space-y-2 pt-4 border-t">
-                  <h4 className="font-medium">Saved Notes</h4>
+                  <h4 className="font-medium">Kaydedilen Notlar</h4>
                   {selectedPoint.notes.map((note, index) => (
                     <div key={index} className="p-3 border rounded-md flex justify-between items-start">
                       <p className="text-sm whitespace-pre-wrap">{note}</p>
                       <Button variant="ghost" size="sm" onClick={() => handleEditNote(index)}>
-                        Edit
+                        Düzenle
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No notes added yet</p>
+                <p className="text-sm text-muted-foreground">Henüz not eklenmemiş</p>
               )}
             </TabsContent>
             
@@ -1133,20 +1226,16 @@ export default function Plan() {
                 />
                 <label htmlFor="image-upload">
                   <Button variant="outline" asChild disabled={selectedPoint?.images && selectedPoint.images.length >= 4}>
-                    <span>Upload Image (Max 4)</span>
+                    <span>Resim Yükle (Maks 4)</span>
                   </Button>
                 </label>
               </div>
               
               {selectedPoint?.images && selectedPoint.images.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4 pt-4">
-                  {selectedPoint.images.map((image, index) => (
+                  {selectedPoint.images.map((imageUrl, index) => (
                     <div key={index} className="relative border rounded-md overflow-hidden group">
-                      <img 
-                        src={image} 
-                        alt={`Point image ${index}`} 
-                        className="w-full h-48 object-cover"
-                      />
+                      <img src={imageUrl} alt={`Point image ${index + 1}`} className="w-full h-auto" />
                       <Button
                         variant="destructive"
                         size="icon"
@@ -1159,73 +1248,17 @@ export default function Plan() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No images uploaded yet</p>
+                <p className="text-sm text-muted-foreground">Henüz resim eklenmemiş</p>
               )}
             </TabsContent>
             
             <TabsContent value="parts" className="space-y-4 pt-4">
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Parça adı veya numarası ile ara"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleAddPartToPoint}
-                    disabled={selectedParts.length === 0}
-                  >
-                    Ekle
-                  </Button>
-                </div>
-                
-                {isLoadingParts ? (
-                  <div className="flex items-center justify-center py-8">
-                    <p>Parçalar yükleniyor...</p>
-                  </div>
-                ) : Array.isArray(parts) && parts.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Henüz hiç parça eklenmemiş. Parçalar sayfasından yeni parça ekleyebilirsiniz.</p>
-                  </div>
-                ) : filteredParts.length === 0 && searchQuery ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>"{searchQuery}" ile eşleşen parça bulunamadı</p>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[320px] rounded-md border p-2">
-                    <div className="space-y-2">
-                      {filteredParts.map((part: any) => (
-                        <div 
-                          key={part.id} 
-                          className={`p-3 rounded-md cursor-pointer transition-colors ${
-                            selectedParts.includes(part.id.toString()) 
-                              ? 'bg-primary/20 border border-primary/50' 
-                              : 'hover:bg-accent border border-transparent'
-                          }`}
-                          onClick={() => togglePartSelection(part.id.toString())}
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <div>
-                              <h4 className="font-medium">{part.name}</h4>
-                              <p className="text-sm text-muted-foreground">{part.partNumber}</p>
-                            </div>
-                            <Badge variant="outline">{part.category || 'Diğer'}</Badge>
-                          </div>
-                          {part.description && (
-                            <div className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                              {part.description.replace(/<[^>]*>/g, ' ')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </div>
+              <PartsSelector 
+                selectedPoint={selectedPoint}
+                setPoints={setPoints}
+                points={points}
+                setSelectedPoint={setSelectedPoint}
+              />
             </TabsContent>
           </Tabs>
           
