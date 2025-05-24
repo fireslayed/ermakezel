@@ -35,21 +35,35 @@ export function LoginForm() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      return await res.json();
+      // Formdan gelen verileri JSON olarak ayarla
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Giriş başarısız");
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Login successful",
-        description: "Welcome to TaskMaster Pro!",
+        title: "Giriş başarılı",
+        description: "ErmakPoint'e hoş geldiniz!",
         variant: "default",
       });
       setLocation("/dashboard");
     },
     onError: (error) => {
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid username or password",
+        title: "Giriş başarısız",
+        description: error.message || "Geçersiz kullanıcı adı veya parola",
         variant: "destructive",
       });
       
@@ -69,8 +83,8 @@ export function LoginForm() {
         <div className="flex justify-center mb-2">
           <Sparkles size={40} className="text-primary" />
         </div>
-        <CardTitle className="text-2xl font-bold">TaskMaster Pro</CardTitle>
-        <CardDescription>Enter your credentials to sign in</CardDescription>
+        <CardTitle className="text-2xl font-bold">ErmakPoint Pro</CardTitle>
+        <CardDescription>Giriş yapmak için bilgilerinizi girin</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -80,9 +94,9 @@ export function LoginForm() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Kullanıcı Adı</FormLabel>
                   <FormControl>
-                    <Input placeholder="Username" {...field} />
+                    <Input placeholder="Kullanıcı adınızı girin" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -93,9 +107,9 @@ export function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Parola</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Password" {...field} />
+                    <Input type="password" placeholder="Parolanızı girin" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,14 +120,14 @@ export function LoginForm() {
               className="w-full" 
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? "Signing in..." : "Sign In"}
+              {loginMutation.isPending ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
-          Demo Credentials: username: ermak | password: ermak
+          Demo Bilgileri: kullanıcı adı: ermak | parola: ermak
         </p>
       </CardFooter>
     </Card>

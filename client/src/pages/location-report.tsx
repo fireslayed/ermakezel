@@ -166,7 +166,7 @@ export default function LocationReportPage() {
   
   // Yer bildirimi oluşturma
   const createMutation = useMutation({
-    mutationFn: (data: { location: string; description: string, gpsLat: number | null; gpsLong: number | null; reportDate: string }) => {
+    mutationFn: (data: { location: string; description: string, gpsLat: number | null; gpsLong: number | null; reportDate: Date }) => {
       return apiRequest('/api/location-reports', 'POST', data);
     },
     onSuccess: () => {
