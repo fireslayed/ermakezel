@@ -92,6 +92,15 @@ export interface IStorage {
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
   
+  // Location Reports operations (Yeni)
+  createLocationReport(report: InsertLocationReport): Promise<LocationReport>;
+  getUserLocationReports(userId: number): Promise<LocationReport[]>;
+  getAllLocationReports(): Promise<(LocationReport & { user: User })[]>;
+  getLocationReport(id: number): Promise<LocationReport | undefined>;
+  getTodayLocationReport(userId: number): Promise<LocationReport | undefined>;
+  updateLocationReport(id: number, report: Partial<InsertLocationReport>): Promise<LocationReport | undefined>;
+  deleteLocationReport(id: number): Promise<boolean>;
+  
   // Dashboard stats
   getTaskStats(userId: number): Promise<{
     total: number;

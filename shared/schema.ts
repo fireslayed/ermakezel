@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, real, varchar, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, real, varchar, primaryKey, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -190,6 +190,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   assignedPlans: many(planUsers),
   assignedTasks: many(taskAssignments),
   createdTasks: many(tasks, { relationName: "createdBy" }),
+  locationReports: many(locationReports),
 }));
 
 export const plansRelations = relations(plans, ({ many }) => ({
@@ -283,3 +284,36 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Yer bildirimleri için tablo
+export const locationReports = pgTable("location_reports", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  reportDate: timestamp("report_date").notNull().defaultNow(),
+  location: text("location").notNull(),
+  description: text("description"),
+  gpsLat: numeric("gps_lat"),
+  gpsLong: numeric("gps_long"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Yer bildirimleri için ilişki
+export const locationReportsRelations = relations(locationReports, ({ one }) => ({
+  user: one(users, {
+    fields: [locationReports.userId],
+    references: [users.id],
+  }),
+}));
+
+// Yer bildirimi şeması
+export const insertLocationReportSchema = createInsertSchema(locationReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type LocationReport = typeof locationReports.$inferSelect;
+export type InsertLocationReport = z.infer<typeof insertLocationReportSchema>;
+
+
