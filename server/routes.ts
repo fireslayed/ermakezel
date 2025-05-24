@@ -10,7 +10,9 @@ import {
   insertPartSchema,
   insertPlanSchema,
   insertPlanUserSchema,
-  insertTaskAssignmentSchema
+  insertTaskAssignmentSchema,
+  insertReminderSchema,
+  insertNotificationSchema
 } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
@@ -1024,6 +1026,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: 'Görev durumu güncellenemedi' });
+    }
+  });
+
+  // Hatırlatıcı (Reminder) API rotaları
+  app.get('/api/reminders', requireAuth, async (req, res) => {
+    try {
+      const reminders = await storage.getReminders(req.session.userId!);
+      res.json(reminders);
+    } catch (error) {
+      res.status(500).json({ message: 'Hatırlatıcılar alınamadı' });
+    }
+  });
+
+  app.get('/api/tasks/:taskId/reminders', requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.taskId);
+      if (isNaN(taskId)) {
+        return res.status(400).json({ message: 'Geçersiz görev ID' });
+      }
+      
+      // Görevi kontrol et
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: 'Görev bulunamadı' });
+      }
+      
+      const reminders = await storage.getTaskReminders(taskId);
+      res.json(reminders);
+    } catch (error) {
+      res.status(500).json({ message: 'Görev hatırlatıcıları alınamadı' });
+    }
+  });
+
+  app.post('/api/reminders', requireAuth, async (req, res) => {
+    try {
+      const reminderData = {
+        ...req.body,
+        userId: req.session.userId!,
+        sent: false
+      };
+      
+      const validatedReminder = insertReminderSchema.parse(reminderData);
+      const reminder = await storage.createReminder(validatedReminder);
+      
+      res.status(201).json(reminder);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Doğrulama hatası', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Hatırlatıcı oluşturulamadı' });
+    }
+  });
+
+  app.patch('/api/reminders/:id', requireAuth, async (req, res) => {
+    try {
+      const reminderId = parseInt(req.params.id);
+      if (isNaN(reminderId)) {
+        return res.status(400).json({ message: 'Geçersiz hatırlatıcı ID' });
+      }
+      
+      // Hatırlatıcı verilerini güncelle
+      const updateData = { ...req.body };
+      delete updateData.id;
+      delete updateData.userId;
+      
+      const updatedReminder = await storage.updateReminder(reminderId, updateData);
+      if (!updatedReminder) {
+        return res.status(404).json({ message: 'Hatırlatıcı bulunamadı' });
+      }
+      
+      res.json(updatedReminder);
+    } catch (error) {
+      res.status(500).json({ message: 'Hatırlatıcı güncellenemedi' });
+    }
+  });
+
+  app.delete('/api/reminders/:id', requireAuth, async (req, res) => {
+    try {
+      const reminderId = parseInt(req.params.id);
+      if (isNaN(reminderId)) {
+        return res.status(400).json({ message: 'Geçersiz hatırlatıcı ID' });
+      }
+      
+      const success = await storage.deleteReminder(reminderId);
+      if (success) {
+        res.json({ message: 'Hatırlatıcı başarıyla silindi' });
+      } else {
+        res.status(404).json({ message: 'Hatırlatıcı bulunamadı' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Hatırlatıcı silinemedi' });
+    }
+  });
+
+  // Bildirim (Notification) API rotaları
+  app.get('/api/notifications', requireAuth, async (req, res) => {
+    try {
+      const notifications = await storage.getUserNotifications(req.session.userId!);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: 'Bildirimler alınamadı' });
+    }
+  });
+
+  app.get('/api/notifications/unread', requireAuth, async (req, res) => {
+    try {
+      const notifications = await storage.getUserUnreadNotifications(req.session.userId!);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: 'Okunmamış bildirimler alınamadı' });
+    }
+  });
+
+  app.post('/api/notifications', requireAuth, async (req, res) => {
+    try {
+      const notificationData = {
+        ...req.body,
+        userId: req.session.userId!,
+        isRead: false,
+        createdAt: new Date()
+      };
+      
+      const validatedNotification = insertNotificationSchema.parse(notificationData);
+      const notification = await storage.createNotification(validatedNotification);
+      
+      res.status(201).json(notification);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Doğrulama hatası', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Bildirim oluşturulamadı' });
+    }
+  });
+
+  app.patch('/api/notifications/:id/read', requireAuth, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      if (isNaN(notificationId)) {
+        return res.status(400).json({ message: 'Geçersiz bildirim ID' });
+      }
+      
+      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      if (!updatedNotification) {
+        return res.status(404).json({ message: 'Bildirim bulunamadı' });
+      }
+      
+      res.json(updatedNotification);
+    } catch (error) {
+      res.status(500).json({ message: 'Bildirim güncellenemedi' });
+    }
+  });
+
+  app.patch('/api/notifications/read-all', requireAuth, async (req, res) => {
+    try {
+      await storage.markAllNotificationsAsRead(req.session.userId!);
+      res.json({ message: 'Tüm bildirimler okundu olarak işaretlendi' });
+    } catch (error) {
+      res.status(500).json({ message: 'Bildirimler güncellenemedi' });
+    }
+  });
+
+  app.delete('/api/notifications/:id', requireAuth, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      if (isNaN(notificationId)) {
+        return res.status(400).json({ message: 'Geçersiz bildirim ID' });
+      }
+      
+      const success = await storage.deleteNotification(notificationId);
+      if (success) {
+        res.json({ message: 'Bildirim başarıyla silindi' });
+      } else {
+        res.status(404).json({ message: 'Bildirim bulunamadı' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Bildirim silinemedi' });
     }
   });
 
