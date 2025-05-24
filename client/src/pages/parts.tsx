@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { z } from "zod";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import {
   Table,
@@ -287,11 +288,14 @@ export default function Parts() {
   // QR Kod oluştur ve önizle
   const generateQRPreview = () => {
     if (!formData.name || !formData.partNumber) {
-      toast({
-        title: "Eksik Bilgi",
-        description: "QR kod oluşturmak için parça adı ve numarası gereklidir",
-        variant: "destructive",
-      });
+      // Toast mesajını sadece kullanıcı önizleme butonuna bastığında göster
+      if (previewMode) {
+        toast({
+          title: "Eksik Bilgi",
+          description: "QR kod oluşturmak için parça adı ve numarası gereklidir",
+          variant: "destructive",
+        });
+      }
       return;
     }
     
@@ -302,6 +306,8 @@ export default function Parts() {
         ? `${formData.length || '-'}x${formData.width || '-'}x${formData.height || '-'} mm` 
         : undefined,
       category: formData.category,
+      weight: formData.weight ? `${formData.weight} gr` : undefined,
+      color: formData.color || undefined,
     });
     
     return qrData;
