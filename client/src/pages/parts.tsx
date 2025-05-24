@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 import {
   Table,
@@ -76,6 +77,7 @@ export default function Parts() {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Varsayılan form değerleri
   const defaultValues: PartFormValues = {
@@ -179,6 +181,9 @@ export default function Parts() {
     e.preventDefault();
     
     try {
+      // Form hatalarını temizle
+      setErrors({});
+      
       // Form verilerini doğrula
       const validatedData = partSchema.parse(formData);
       
@@ -191,10 +196,23 @@ export default function Parts() {
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // Doğrulama hataları
+        // Doğrulama hatalarını field bazında kaydet
+        const fieldErrors: Record<string, string> = {};
+        
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            const fieldName = err.path[0].toString();
+            fieldErrors[fieldName] = err.message;
+          }
+        });
+        
+        // Hataları state'e kaydet
+        setErrors(fieldErrors);
+        
+        // Genel bir bildirim de göster
         toast({
           title: "Form Hataları",
-          description: error.errors.map(e => e.message).join(", "),
+          description: "Lütfen formdaki hataları düzeltin",
           variant: "destructive",
         });
       } else {
@@ -283,6 +301,7 @@ export default function Parts() {
     setImagePreview(null);
     setSelectedPartId(null);
     setPreviewMode(false);
+    setErrors({});
   };
   
   // QR Kod oluştur ve önizle
@@ -353,8 +372,12 @@ export default function Parts() {
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="Parça adını girin"
+                        className={cn(errors.name ? "border-red-500" : "")}
                         required
                       />
+                      {errors.name && (
+                        <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -365,8 +388,12 @@ export default function Parts() {
                         value={formData.partNumber}
                         onChange={handleChange}
                         placeholder="Örn: P-00123"
+                        className={cn(errors.partNumber ? "border-red-500" : "")}
                         required
                       />
+                      {errors.partNumber && (
+                        <p className="text-sm text-red-500 mt-1">{errors.partNumber}</p>
+                      )}
                     </div>
                     
                     <div>
@@ -375,7 +402,7 @@ export default function Parts() {
                         value={formData.category || ""}
                         onValueChange={(value) => handleSelectChange("category", value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className={cn(errors.category ? "border-red-500" : "")}>
                           <SelectValue placeholder="Kategori seçin" />
                         </SelectTrigger>
                         <SelectContent>
@@ -386,6 +413,9 @@ export default function Parts() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.category && (
+                        <p className="text-sm text-red-500 mt-1">{errors.category}</p>
+                      )}
                     </div>
                     
                     <div>
