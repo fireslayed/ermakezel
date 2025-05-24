@@ -57,6 +57,7 @@ export default function Plan() {
   const [imageWidth, setImageWidth] = useState<number>(500);
   const [imageHeight, setImageHeight] = useState<number>(400);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
 
   // Handle toggle buttons
   const handleToggleChange = (value: string) => {
@@ -479,59 +480,70 @@ export default function Plan() {
               <Plus className="h-4 w-4 mr-2" />
               Nokta Ekle
             </ToggleGroupItem>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLayersPanel(!showLayersPanel)}
+              className="ml-2"
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              {showLayersPanel ? "Katmanları Gizle" : "Katmanları Göster"}
+            </Button>
           </ToggleGroup>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4 mb-4">
-            <div className="flex-1">
-              <h3 className="text-sm font-medium mb-2 flex items-center">
-                <Layers className="h-4 w-4 mr-1" />
-                Resim Katmanları
-              </h3>
-              <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
-                {backgroundImageLayers.length === 0 ? (
-                  <div className="text-sm text-muted-foreground p-2">
-                    Henüz hiç resim katmanı eklenmemiş. Katman eklemek için "Add Image Layer" butonuna tıklayın.
-                  </div>
-                ) : (
-                  backgroundImageLayers.map((layer, index) => (
-                    <div
-                      key={layer.id}
-                      onClick={() => handleSelectLayer(layer.id)}
-                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
-                        selectedLayerId === layer.id 
-                          ? "bg-primary/10 border border-primary/50" 
-                          : "hover:bg-accent"
-                      }`}
-                    >
-                      <div className="flex items-center">
-                        <div 
-                          className="w-6 h-6 mr-2 border border-border overflow-hidden rounded-sm"
-                          style={{ 
-                            backgroundImage: `url(${layer.url})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center'
-                          }}
-                        />
-                        <span className="text-sm font-medium">Katman {index + 1}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-100/50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          confirmDeleteLayer(layer.id);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+          {showLayersPanel && (
+            <div className="flex space-x-4 mb-4">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium mb-2 flex items-center">
+                  <Layers className="h-4 w-4 mr-1" />
+                  Resim Katmanları
+                </h3>
+                <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
+                  {backgroundImageLayers.length === 0 ? (
+                    <div className="text-sm text-muted-foreground p-2">
+                      Henüz hiç resim katmanı eklenmemiş. Katman eklemek için "Resim Katmanı Ekle" butonuna tıklayın.
                     </div>
-                  ))
-                )}
+                  ) : (
+                    backgroundImageLayers.map((layer, index) => (
+                      <div
+                        key={layer.id}
+                        onClick={() => handleSelectLayer(layer.id)}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
+                          selectedLayerId === layer.id 
+                            ? "bg-primary/10 border border-primary/50" 
+                            : "hover:bg-accent"
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <div 
+                            className="w-6 h-6 mr-2 border border-border overflow-hidden rounded-sm"
+                            style={{ 
+                              backgroundImage: `url(${layer.url})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                          />
+                          <span className="text-sm font-medium">Katman {index + 1}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-100/50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmDeleteLayer(layer.id);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <div 
             ref={canvasRef} 
             className="relative w-full h-[600px] border border-border rounded-md overflow-hidden bg-gray-50 dark:bg-gray-900"
