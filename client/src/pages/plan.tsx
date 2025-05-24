@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Move, Image, X, Layers, Search } from "lucide-react";
+import { Plus, Move, Image, X, Layers, Search, Save, Trash2, FilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -28,6 +28,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PlanPoint {
   id: string;
@@ -207,6 +215,7 @@ function PartsSelector({ selectedPoint, setPoints, points, setSelectedPoint }: P
 
 export default function Plan() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [points, setPoints] = useState<PlanPoint[]>([]);
@@ -219,6 +228,219 @@ export default function Plan() {
   const [imageHeight, setImageHeight] = useState<number>(400);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
+  
+  // Plan yönetimi için değişkenler
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [showCreatePlanDialog, setShowCreatePlanDialog] = useState(false);
+  const [newPlanName, setNewPlanName] = useState("");
+  const [showDeletePlanConfirm, setShowDeletePlanConfirm] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Planları getir
+  const { data: plans, isLoading: isLoadingPlans } = useQuery({
+    queryKey: ['/api/plans'],
+    onSuccess: (data) => {
+      // Eğer henüz bir plan seçilmediyse ve plan varsa ilk planı seç
+      if (data && Array.isArray(data) && data.length > 0 && !selectedPlanId) {
+        setSelectedPlanId(data[0].id.toString());
+        loadPlan(data[0]);
+      }
+    }
+  });
+  
+  // Seçili planı getir
+  const { data: selectedPlan, isLoading: isLoadingSelectedPlan } = useQuery({
+    queryKey: ['/api/plans', selectedPlanId],
+    enabled: !!selectedPlanId,
+    onSuccess: (data) => {
+      if (data) {
+        loadPlan(data);
+      }
+    }
+  });
+  
+  // Plan oluşturma
+  const createPlanMutation = useMutation({
+    mutationFn: async (planData: { name: string }) => {
+      return await apiRequest('/api/plans', {
+        method: 'POST',
+        body: JSON.stringify(planData),
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/plans'] });
+      setSelectedPlanId(data.id.toString());
+      setShowCreatePlanDialog(false);
+      setNewPlanName("");
+      toast({
+        title: "Plan oluşturuldu",
+        description: "Yeni plan başarıyla oluşturuldu.",
+      });
+      
+      // Yeni plan oluşturulduğunda noktaları ve arkaplan görüntülerini temizle
+      setPoints([]);
+      setBackgroundImageLayers([]);
+      setBackgroundImage(null);
+      setHasUnsavedChanges(false);
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Plan oluşturulurken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Plan güncelleme
+  const updatePlanMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: any }) => {
+      return await apiRequest(`/api/plans/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/plans'] });
+      toast({
+        title: "Plan kaydedildi",
+        description: "Plan başarıyla kaydedildi.",
+      });
+      setHasUnsavedChanges(false);
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Plan kaydedilirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Plan silme
+  const deletePlanMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/plans/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/plans'] });
+      // Eğer silinecek plan seçili plan ise, başka bir planı seç veya boş göster
+      if (Array.isArray(plans) && plans.length > 0) {
+        const remainingPlans = plans.filter(p => p.id.toString() !== selectedPlanId);
+        if (remainingPlans.length > 0) {
+          setSelectedPlanId(remainingPlans[0].id.toString());
+          loadPlan(remainingPlans[0]);
+        } else {
+          setSelectedPlanId("");
+          setPoints([]);
+          setBackgroundImageLayers([]);
+          setBackgroundImage(null);
+        }
+      }
+      
+      setShowDeletePlanConfirm(false);
+      toast({
+        title: "Plan silindi",
+        description: "Plan başarıyla silindi.",
+      });
+      setHasUnsavedChanges(false);
+    },
+    onError: () => {
+      toast({
+        title: "Hata",
+        description: "Plan silinirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Plan yükleme fonksiyonu
+  const loadPlan = (plan: any) => {
+    if (plan && plan.content) {
+      if (plan.content.points) {
+        setPoints(plan.content.points.map((point: any) => ({
+          ...point,
+          hasNotes: Array.isArray(point.notes) && point.notes.length > 0,
+          hasImages: Array.isArray(point.images) && point.images.length > 0
+        })));
+      } else {
+        setPoints([]);
+      }
+      
+      if (plan.content.backgroundImages) {
+        setBackgroundImageLayers(plan.content.backgroundImages);
+        if (plan.content.backgroundImages.length > 0) {
+          setBackgroundImage(plan.content.backgroundImages[0]);
+          setSelectedLayerId(plan.content.backgroundImages[0].id);
+          setImageWidth(plan.content.backgroundImages[0].width);
+          setImageHeight(plan.content.backgroundImages[0].height);
+        } else {
+          setBackgroundImage(null);
+          setSelectedLayerId(null);
+        }
+      } else {
+        setBackgroundImageLayers([]);
+        setBackgroundImage(null);
+        setSelectedLayerId(null);
+      }
+    } else {
+      setPoints([]);
+      setBackgroundImageLayers([]);
+      setBackgroundImage(null);
+      setSelectedLayerId(null);
+    }
+    setHasUnsavedChanges(false);
+  };
+  
+  // Planı kaydet
+  const savePlan = () => {
+    if (!selectedPlanId) {
+      setShowCreatePlanDialog(true);
+      return;
+    }
+    
+    const planContent = {
+      backgroundImages: backgroundImageLayers,
+      points
+    };
+    
+    updatePlanMutation.mutate({
+      id: selectedPlanId,
+      data: {
+        content: planContent
+      }
+    });
+  };
+  
+  // Yeni plan oluştur
+  const handleCreatePlan = () => {
+    if (!newPlanName.trim()) {
+      toast({
+        title: "Plan adı gerekli",
+        description: "Lütfen plan için bir ad girin.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    createPlanMutation.mutate({ name: newPlanName });
+  };
+  
+  // Plan sil
+  const handleDeletePlan = () => {
+    if (!selectedPlanId) return;
+    deletePlanMutation.mutate(selectedPlanId);
+  };
+  
+  // Plan değişikliklerini izle
+  useEffect(() => {
+    // Eğer noktalar veya arkaplan görüntüleri değişirse, kaydedilmemiş değişiklikler var demektir
+    if (selectedPlanId) {
+      setHasUnsavedChanges(true);
+    }
+  }, [points, backgroundImageLayers]);
   
   // Parça seçimi için değişkenler
   const [searchQuery, setSearchQuery] = useState("");

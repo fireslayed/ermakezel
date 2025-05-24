@@ -7,7 +7,8 @@ import {
   insertProjectSchema,
   insertUserSchema,
   insertReportSchema,
-  insertPartSchema
+  insertPartSchema,
+  insertPlanSchema
 } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
@@ -637,6 +638,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting part:', error);
       res.status(500).json({ message: 'Parça silinirken hata oluştu' });
+    }
+  });
+  
+  // Plan routes
+  app.get('/api/plans', requireAuth, async (req, res) => {
+    try {
+      const plans = await storage.getPlans(req.session.userId!);
+      res.json(plans);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+      res.status(500).json({ message: 'Planlar alınırken hata oluştu' });
+    }
+  });
+  
+  app.get('/api/plans/:id', requireAuth, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      if (isNaN(planId)) {
+        return res.status(400).json({ message: 'Geçersiz plan ID' });
+      }
+      
+      const plan = await storage.getPlan(planId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: 'Plan bulunamadı' });
+      }
+      
+      if (plan.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Bu planı görüntüleme yetkiniz yok' });
+      }
+      
+      res.json(plan);
+    } catch (error) {
+      console.error('Error fetching plan:', error);
+      res.status(500).json({ message: 'Plan alınırken hata oluştu' });
+    }
+  });
+  
+  app.post('/api/plans', requireAuth, async (req, res) => {
+    try {
+      const planData = insertPlanSchema.parse(req.body);
+      
+      // Kullanıcı ID'sini ekle
+      const plan = await storage.createPlan({
+        ...planData,
+        userId: req.session.userId!
+      });
+      
+      res.status(201).json(plan);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Geçersiz veri formatı', errors: error.errors });
+      }
+      console.error('Error creating plan:', error);
+      res.status(500).json({ message: 'Plan eklenirken hata oluştu' });
+    }
+  });
+  
+  app.put('/api/plans/:id', requireAuth, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      if (isNaN(planId)) {
+        return res.status(400).json({ message: 'Geçersiz plan ID' });
+      }
+      
+      const existingPlan = await storage.getPlan(planId);
+      
+      if (!existingPlan) {
+        return res.status(404).json({ message: 'Plan bulunamadı' });
+      }
+      
+      if (existingPlan.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Bu planı düzenleme yetkiniz yok' });
+      }
+      
+      const planData = insertPlanSchema.partial().parse(req.body);
+      const updatedPlan = await storage.updatePlan(planId, planData);
+      
+      res.json(updatedPlan);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Geçersiz veri formatı', errors: error.errors });
+      }
+      console.error('Error updating plan:', error);
+      res.status(500).json({ message: 'Plan güncellenirken hata oluştu' });
+    }
+  });
+  
+  app.delete('/api/plans/:id', requireAuth, async (req, res) => {
+    try {
+      const planId = parseInt(req.params.id);
+      if (isNaN(planId)) {
+        return res.status(400).json({ message: 'Geçersiz plan ID' });
+      }
+      
+      const existingPlan = await storage.getPlan(planId);
+      
+      if (!existingPlan) {
+        return res.status(404).json({ message: 'Plan bulunamadı' });
+      }
+      
+      if (existingPlan.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Bu planı silme yetkiniz yok' });
+      }
+      
+      const result = await storage.deletePlan(planId);
+      if (result) {
+        res.status(200).json({ message: 'Plan başarıyla silindi' });
+      } else {
+        res.status(500).json({ message: 'Plan silinirken bir hata oluştu' });
+      }
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      res.status(500).json({ message: 'Plan silinirken hata oluştu' });
     }
   });
 
