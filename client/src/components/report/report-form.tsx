@@ -204,14 +204,17 @@ export function ReportForm({
               value={formData.location}
               onChange={handleChange}
               placeholder="Rapor konumunu girin (opsiyonel)"
-              className="w-full box-border"
+              className={cn("w-full box-border", errors.location ? "border-red-500" : "")}
             />
+            {errors.location && (
+              <p className="text-sm text-red-500 mt-1">{errors.location}</p>
+            )}
           </div>
 
           {/* Açıklama - CKEditor */}
           <div className="space-y-2 w-full">
             <Label htmlFor="description" className="block text-sm font-medium">Açıklama</Label>
-            <div className="border rounded-md overflow-hidden w-full box-border">
+            <div className={cn("border rounded-md overflow-hidden w-full box-border", errors.description ? "border-red-500" : "")}>
               <div className="w-full max-w-full" style={{ 
                 boxSizing: 'border-box',
                 overflowX: 'hidden'
@@ -263,6 +266,9 @@ export function ReportForm({
                 />
               </div>
             </div>
+            {errors.description && (
+              <p className="text-sm text-red-500 mt-1">{errors.description}</p>
+            )}
           </div>
 
           {/* Dosya yükleme (ileri versiyonlarda eklenecek) */}
