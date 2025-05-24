@@ -305,17 +305,59 @@ export default function LocationReportPage() {
     setGpsLong(null);
   };
   
+  // Ters coğrafi kodlama (GPS'ten şehir/ülke bilgisi alma)
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      // OpenStreetMap Nominatim API'sini kullanıyoruz (ücretsiz ve API key gerektirmez)
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // Ülke ve şehir bilgisini al
+      const city = data.address.city || data.address.town || data.address.village || data.address.county || '';
+      const country = data.address.country || '';
+      
+      // Konum bilgisini oluştur
+      return `${city}, ${country}`.trim();
+    } catch (error) {
+      console.error("Konum bilgisi alınamadı:", error);
+      return null;
+    }
+  };
+
   // Lokasyon erişimi için tarayıcı API'sini kullan
   const getGeoLocation = () => {
     if (navigator.geolocation) {
+      toast({
+        title: "Konum alınıyor",
+        description: "Lütfen bekleyin...",
+      });
+      
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setGpsLat(position.coords.latitude);
-          setGpsLong(position.coords.longitude);
-          toast({
-            title: "Konum alındı",
-            description: `GPS: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
-          });
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          setGpsLat(lat);
+          setGpsLong(lng);
+          
+          // Ters coğrafi kodlama ile şehir/ülke bilgisini al
+          const locationName = await reverseGeocode(lat, lng);
+          if (locationName) {
+            setLocation(locationName);
+            toast({
+              title: "Konum alındı",
+              description: `${locationName} (GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)})`,
+            });
+          } else {
+            toast({
+              title: "Konum alındı",
+              description: `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            });
+          }
         },
         (error) => {
           console.error("Geolocation error:", error);
