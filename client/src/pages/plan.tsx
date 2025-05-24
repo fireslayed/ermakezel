@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Move, Image, X } from "lucide-react";
+import { Plus, Move, Image, X, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -176,6 +186,20 @@ export default function Plan() {
     });
   };
 
+  interface BackgroundImageLayer {
+    id: string;
+    url: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+  
+  const [backgroundImageLayers, setBackgroundImageLayers] = useState<BackgroundImageLayer[]>([]);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [layerToDelete, setLayerToDelete] = useState<string | null>(null);
+
   // Handle background image upload
   const handleBackgroundImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -187,17 +211,68 @@ export default function Plan() {
     setImageFile(file);
     const imageUrl = URL.createObjectURL(file);
     
-    setBackgroundImage({
+    const newLayer: BackgroundImageLayer = {
+      id: Date.now().toString(),
       url: imageUrl,
       x: 0,
       y: 0,
       width: imageWidth,
       height: imageHeight
-    });
+    };
+    
+    setBackgroundImageLayers(prev => [...prev, newLayer]);
+    setSelectedLayerId(newLayer.id);
+    setBackgroundImage(newLayer);
     
     toast({
       title: "Background image uploaded",
-      description: "Image has been added to the canvas",
+      description: "New image layer has been added to the canvas",
+    });
+  };
+  
+  // Select a specific layer
+  const handleSelectLayer = (layerId: string) => {
+    setSelectedLayerId(layerId);
+    const layer = backgroundImageLayers.find(l => l.id === layerId);
+    if (layer) {
+      setBackgroundImage(layer);
+      setImageWidth(layer.width);
+      setImageHeight(layer.height);
+    }
+  };
+  
+  // Confirm delete layer
+  const confirmDeleteLayer = (layerId: string) => {
+    setLayerToDelete(layerId);
+    setShowDeleteConfirm(true);
+  };
+  
+  // Delete a layer
+  const handleDeleteLayer = () => {
+    if (!layerToDelete) return;
+    
+    setBackgroundImageLayers(prev => prev.filter(layer => layer.id !== layerToDelete));
+    
+    // If we're deleting the selected layer, select another one or set to null
+    if (selectedLayerId === layerToDelete) {
+      const remainingLayers = backgroundImageLayers.filter(layer => layer.id !== layerToDelete);
+      if (remainingLayers.length > 0) {
+        setSelectedLayerId(remainingLayers[0].id);
+        setBackgroundImage(remainingLayers[0]);
+        setImageWidth(remainingLayers[0].width);
+        setImageHeight(remainingLayers[0].height);
+      } else {
+        setSelectedLayerId(null);
+        setBackgroundImage(null);
+      }
+    }
+    
+    setShowDeleteConfirm(false);
+    setLayerToDelete(null);
+    
+    toast({
+      title: "Layer deleted",
+      description: "The image layer has been removed",
     });
   };
 
@@ -233,8 +308,23 @@ export default function Plan() {
 
   // Handle image resize
   const handleImageResize = () => {
-    if (!backgroundImage) return;
+    if (!backgroundImage || !selectedLayerId) return;
     
+    // Update the selected layer in our layers array
+    const updatedLayers = backgroundImageLayers.map(layer => {
+      if (layer.id === selectedLayerId) {
+        return {
+          ...layer,
+          width: imageWidth,
+          height: imageHeight
+        };
+      }
+      return layer;
+    });
+    
+    setBackgroundImageLayers(updatedLayers);
+    
+    // Also update the current background image
     setBackgroundImage({
       ...backgroundImage,
       width: imageWidth,
@@ -248,23 +338,42 @@ export default function Plan() {
   };
 
   // Handle drag for background image
-  const handleImageMouseDown = (e: React.MouseEvent) => {
-    if (activeTool !== "move-image" || !backgroundImage) return;
+  const handleImageMouseDown = (e: React.MouseEvent, layerId: string) => {
+    if (activeTool !== "move-image") return;
+    
+    // Find the layer in our layers array
+    const layerIndex = backgroundImageLayers.findIndex(layer => layer.id === layerId);
+    if (layerIndex === -1) return;
+    
+    const layer = backgroundImageLayers[layerIndex];
     
     const startX = e.clientX;
     const startY = e.clientY;
-    const initialX = backgroundImage.x;
-    const initialY = backgroundImage.y;
+    const initialX = layer.x;
+    const initialY = layer.y;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
       
-      setBackgroundImage({
-        ...backgroundImage,
+      // Update this specific layer's position
+      const updatedLayers = [...backgroundImageLayers];
+      updatedLayers[layerIndex] = {
+        ...layer,
         x: initialX + dx,
         y: initialY + dy
-      });
+      };
+      
+      setBackgroundImageLayers(updatedLayers);
+      
+      // If this is the selected layer, also update the backgroundImage state
+      if (selectedLayerId === layerId) {
+        setBackgroundImage({
+          ...layer,
+          x: initialX + dx,
+          y: initialY + dy
+        });
+      }
     };
     
     const handleMouseUp = () => {
@@ -290,7 +399,7 @@ export default function Plan() {
               onChange={(e) => setImageWidth(parseInt(e.target.value) || 100)}
               className="w-20"
               min={50}
-              disabled={activeTool !== "resize-image"}
+              disabled={activeTool !== "resize-image" || !selectedLayerId}
             />
             <span>×</span>
             <Input 
@@ -299,13 +408,13 @@ export default function Plan() {
               onChange={(e) => setImageHeight(parseInt(e.target.value) || 100)}
               className="w-20"
               min={50}
-              disabled={activeTool !== "resize-image"}
+              disabled={activeTool !== "resize-image" || !selectedLayerId}
             />
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleImageResize}
-              disabled={activeTool !== "resize-image" || !backgroundImage}
+              disabled={activeTool !== "resize-image" || !selectedLayerId}
             >
               Apply
             </Button>
@@ -321,10 +430,21 @@ export default function Plan() {
             />
             <label htmlFor="background-image-upload">
               <Button variant="outline" size="sm" asChild>
-                <span>Upload Background</span>
+                <span>Add Image Layer</span>
               </Button>
             </label>
           </div>
+          
+          {selectedLayerId && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => confirmDeleteLayer(selectedLayerId)}
+              className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+            >
+              Delete Layer
+            </Button>
+          )}
         </div>
       </div>
       
@@ -339,7 +459,7 @@ export default function Plan() {
               data-state={activeTool === "move-image" ? "on" : "off"}
             >
               <Move className="h-4 w-4 mr-2" />
-              Move Image
+              Resmi Taşı
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="resize-image" 
@@ -348,7 +468,7 @@ export default function Plan() {
               data-state={activeTool === "resize-image" ? "on" : "off"}
             >
               <Image className="h-4 w-4 mr-2" />
-              Resize Image
+              Resmi Boyutlandır
             </ToggleGroupItem>
             <ToggleGroupItem 
               value="add-point" 
@@ -357,35 +477,88 @@ export default function Plan() {
               data-state={activeTool === "add-point" ? "on" : "off"}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Point
+              Nokta Ekle
             </ToggleGroupItem>
           </ToggleGroup>
         </CardHeader>
         <CardContent>
+          <div className="flex space-x-4 mb-4">
+            <div className="flex-1">
+              <h3 className="text-sm font-medium mb-2 flex items-center">
+                <Layers className="h-4 w-4 mr-1" />
+                Resim Katmanları
+              </h3>
+              <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
+                {backgroundImageLayers.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-2">
+                    Henüz hiç resim katmanı eklenmemiş. Katman eklemek için "Add Image Layer" butonuna tıklayın.
+                  </div>
+                ) : (
+                  backgroundImageLayers.map((layer, index) => (
+                    <div
+                      key={layer.id}
+                      onClick={() => handleSelectLayer(layer.id)}
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
+                        selectedLayerId === layer.id 
+                          ? "bg-primary/10 border border-primary/50" 
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <div 
+                          className="w-6 h-6 mr-2 border border-border overflow-hidden rounded-sm"
+                          style={{ 
+                            backgroundImage: `url(${layer.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        />
+                        <span className="text-sm font-medium">Katman {index + 1}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-100/50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          confirmDeleteLayer(layer.id);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
           <div 
             ref={canvasRef} 
             className="relative w-full h-[600px] border border-border rounded-md overflow-hidden bg-gray-50 dark:bg-gray-900"
             onClick={handleCanvasClick}
           >
-            {/* Background Image */}
-            {backgroundImage && (
+            {/* Background Image Layers */}
+            {backgroundImageLayers.map((layer) => (
               <div 
-                className="absolute cursor-move"
+                key={layer.id}
+                className={`absolute cursor-move ${selectedLayerId === layer.id ? 'ring-2 ring-primary' : ''}`}
                 style={{
-                  left: `${backgroundImage.x}px`,
-                  top: `${backgroundImage.y}px`,
-                  width: `${backgroundImage.width}px`,
-                  height: `${backgroundImage.height}px`,
+                  left: `${layer.x}px`,
+                  top: `${layer.y}px`,
+                  width: `${layer.width}px`,
+                  height: `${layer.height}px`,
+                  zIndex: selectedLayerId === layer.id ? 5 : 1 // Higher z-index for selected layer
                 }}
-                onMouseDown={handleImageMouseDown}
+                onMouseDown={(e) => handleImageMouseDown(e, layer.id)}
+                onClick={() => handleSelectLayer(layer.id)}
               >
                 <img 
-                  src={backgroundImage.url} 
-                  alt="Background" 
+                  src={layer.url} 
+                  alt={`Layer ${layer.id}`} 
                   className="w-full h-full object-contain"
                 />
               </div>
-            )}
+            ))}
             
             {/* Points */}
             {points.map((point) => (
@@ -408,6 +581,22 @@ export default function Plan() {
         </CardContent>
       </Card>
       
+      {/* Delete Layer Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Image Layer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this image layer? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLayer}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Point Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
