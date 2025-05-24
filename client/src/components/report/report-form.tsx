@@ -76,227 +76,236 @@ export function ReportForm({
 
   return (
     <div className="max-w-full w-full overflow-hidden">
-      <form onSubmit={handleSubmit} className="space-y-4 w-full">
-        <div className="space-y-2 w-full">
-          <Label htmlFor="title">Rapor Başlığı</Label>
-          <Input
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="Rapor başlığını girin"
-            required
-            className="w-full"
-          />
-        </div>
-
-        {/* Rapor tarihi - ayrı satırda tam genişlikte */}
-        <div className="space-y-2 w-full mt-4 mb-4">
-          <Label htmlFor="reportDate">Rapor Tarihi</Label>
-          <Input
-            id="reportDate"
-            name="reportDate"
-            type="date"
-            value={formData.reportDate}
-            onChange={handleChange}
-            required
-            className="w-full"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+      <form onSubmit={handleSubmit} className="space-y-6 w-full">
+        <div className="grid grid-cols-1 gap-5 w-full">
+          {/* Rapor başlığı */}
           <div className="space-y-2 w-full">
-            <Label htmlFor="reportType">Rapor Türü</Label>
-            <Select
-              value={formData.reportType}
-              onValueChange={(value) => handleSelectChange("reportType", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Rapor türünü seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                {reportTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="title" className="block text-sm font-medium">Rapor Başlığı</Label>
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Rapor başlığını girin"
+              required
+              className="w-full box-border"
+            />
           </div>
 
+          {/* Rapor tarihi */}
           <div className="space-y-2 w-full">
-            <Label htmlFor="projectId">İlgili Proje</Label>
-            <Select
-              value={formData.projectId}
-              onValueChange={(value) => handleSelectChange("projectId", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Proje seçin (opsiyonel)" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects?.map((project) => (
-                  <SelectItem key={project.id} value={project.id.toString()}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="reportDate" className="block text-sm font-medium">Rapor Tarihi</Label>
+            <Input
+              id="reportDate"
+              name="reportDate"
+              type="date"
+              value={formData.reportDate}
+              onChange={handleChange}
+              required
+              className="w-full box-border"
+            />
           </div>
-        </div>
 
-        <div className="space-y-2 w-full">
-          <Label htmlFor="location">Konum</Label>
-          <Input
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Rapor konumunu girin (opsiyonel)"
-            className="w-full"
-          />
-        </div>
+          {/* Rapor türü ve proje - grid içinde yan yana */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
+            <div className="space-y-2 w-full">
+              <Label htmlFor="reportType" className="block text-sm font-medium">Rapor Türü</Label>
+              <Select
+                value={formData.reportType}
+                onValueChange={(value) => handleSelectChange("reportType", value)}
+              >
+                <SelectTrigger className="w-full box-border">
+                  <SelectValue placeholder="Rapor türünü seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reportTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-2 my-6 w-full">
-          <Label htmlFor="description">Açıklama</Label>
-          <div className="min-h-[300px] border rounded-md overflow-hidden p-0 w-full">
-            <div className="w-full h-full">
-              <CKEditor
-                editor={ClassicEditor}
-                data={formData.description || ""}
-                onChange={(event, editor) => {
-                  const data = editor.getData();
-                  handleEditorChange(data);
-                }}
-                config={{
-                  toolbar: [
-                    "heading",
-                    "|",
-                    "bold",
-                    "italic",
-                    "link",
-                    "|",
-                    "bulletedList",
-                    "numberedList",
-                    "|",
-                    "outdent",
-                    "indent",
-                    "|",
-                    "blockQuote",
-                    "insertTable",
-                    "imageUpload",
-                    "|",
-                    "undo",
-                    "redo",
-                  ],
-                  language: "tr",
-                  placeholder:
-                    "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)",
-                  image: {
-                    toolbar: [
-                      "imageTextAlternative",
-                      "imageStyle:inline",
-                      "imageStyle:block",
-                      "imageStyle:side",
-                    ],
-                  },
-                }}
-              />
+            <div className="space-y-2 w-full">
+              <Label htmlFor="projectId" className="block text-sm font-medium">İlgili Proje</Label>
+              <Select
+                value={formData.projectId}
+                onValueChange={(value) => handleSelectChange("projectId", value)}
+              >
+                <SelectTrigger className="w-full box-border">
+                  <SelectValue placeholder="Proje seçin (opsiyonel)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects?.map((project) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
 
-        {/* Önizleme ve Yazdırma Butonları */}
-        <div className="flex flex-wrap space-x-2 space-y-2 sm:space-y-0 mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => setPreviewMode(!previewMode)}
-          >
-            <span role="img" aria-label="Önizleme">
-              🔍
-            </span>
-            {previewMode ? "Düzenlemeye Dön" : "Raporu Önizle"}
-          </Button>
+          {/* Konum */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="location" className="block text-sm font-medium">Konum</Label>
+            <Input
+              id="location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="Rapor konumunu girin (opsiyonel)"
+              className="w-full box-border"
+            />
+          </div>
 
-          {previewMode && (
+          {/* Açıklama - CKEditor */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="description" className="block text-sm font-medium">Açıklama</Label>
+            <div className="border rounded-md overflow-hidden w-full box-border">
+              <div className="w-full" style={{ boxSizing: 'border-box' }}>
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={formData.description || ""}
+                  onChange={(event, editor) => {
+                    const data = editor.getData();
+                    handleEditorChange(data);
+                  }}
+                  config={{
+                    toolbar: [
+                      "heading",
+                      "|",
+                      "bold",
+                      "italic",
+                      "link",
+                      "|",
+                      "bulletedList",
+                      "numberedList",
+                      "|",
+                      "outdent",
+                      "indent",
+                      "|",
+                      "blockQuote",
+                      "insertTable",
+                      "imageUpload",
+                      "|",
+                      "undo",
+                      "redo",
+                    ],
+                    language: "tr",
+                    placeholder:
+                      "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)",
+                    image: {
+                      toolbar: [
+                        "imageTextAlternative",
+                        "imageStyle:inline",
+                        "imageStyle:block",
+                        "imageStyle:side",
+                      ],
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Dosya yükleme (ileri versiyonlarda eklenecek) */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="files" className="block text-sm font-medium">Dosyalar</Label>
+            <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground w-full box-border">
+              <p>Dosya yükleme özelliği yakında eklenecek</p>
+            </div>
+          </div>
+
+          {/* Önizleme ve Yazdırma Butonları */}
+          <div className="flex flex-wrap gap-2 w-full mt-2">
             <Button
               type="button"
               variant="outline"
               className="flex items-center gap-2"
-              onClick={() => {
-                const printWindow = window.open("", "_blank");
-                if (printWindow) {
-                  printWindow.document.write(`
-                    <html>
-                      <head>
-                        <title>${formData.title || "Rapor"}</title>
-                        <style>
-                          body { font-family: Arial, sans-serif; margin: 20px; }
-                          h1 { font-size: 24px; margin-bottom: 10px; }
-                          .report-date { color: #666; margin-bottom: 20px; }
-                          .report-content { line-height: 1.5; }
-                        </style>
-                      </head>
-                      <body>
-                        <h1>${formData.title || "Rapor"}</h1>
-                        <div class="report-date">Tarih: ${
-                          formData.reportDate
-                        }</div>
-                        <div class="report-content">${
-                          formData.description || ""
-                        }</div>
-                      </body>
-                    </html>
-                  `);
-                  printWindow.document.close();
-                  printWindow.print();
-                }
-              }}
+              onClick={() => setPreviewMode(!previewMode)}
             >
-              <span role="img" aria-label="Yazdır">
-                🖨️
-              </span>{" "}
-              Yazdır
+              <span role="img" aria-label="Önizleme">
+                🔍
+              </span>
+              {previewMode ? "Düzenlemeye Dön" : "Raporu Önizle"}
             </Button>
-          )}
-        </div>
 
-        {/* Önizleme Paneli */}
-        {previewMode && (
-          <div className="mt-4 p-4 border rounded-md bg-white">
-            <h3 className="text-lg font-medium mb-2">
-              {formData.title || "Rapor"}
-            </h3>
-            <div className="text-sm text-gray-500 mb-4">
-              Tarih: {formData.reportDate}
+            {previewMode && (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  const printWindow = window.open("", "_blank");
+                  if (printWindow) {
+                    printWindow.document.write(`
+                      <html>
+                        <head>
+                          <title>${formData.title || "Rapor"}</title>
+                          <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            h1 { font-size: 24px; margin-bottom: 10px; }
+                            .report-date { color: #666; margin-bottom: 20px; }
+                            .report-content { line-height: 1.5; }
+                          </style>
+                        </head>
+                        <body>
+                          <h1>${formData.title || "Rapor"}</h1>
+                          <div class="report-date">Tarih: ${
+                            formData.reportDate
+                          }</div>
+                          <div class="report-content">${
+                            formData.description || ""
+                          }</div>
+                        </body>
+                      </html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.print();
+                  }
+                }}
+              >
+                <span role="img" aria-label="Yazdır">
+                  🖨️
+                </span>{" "}
+                Yazdır
+              </Button>
+            )}
+          </div>
+
+          {/* Önizleme Paneli */}
+          {previewMode && (
+            <div className="p-4 border rounded-md bg-white w-full box-border">
+              <h3 className="text-lg font-medium mb-2">
+                {formData.title || "Rapor"}
+              </h3>
+              <div className="text-sm text-gray-500 mb-4">
+                Tarih: {formData.reportDate}
+              </div>
+              <div
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: formData.description || "" }}
+              />
             </div>
-            <div
-              className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: formData.description || "" }}
-            />
-          </div>
-        )}
+          )}
 
-        {/* Dosya yükleme (ileri versiyonlarda eklenecek) */}
-        <div className="space-y-2 w-full my-6">
-          <Label>Dosyalar</Label>
-          <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground w-full">
-            <p>Dosya yükleme özelliği yakında eklenecek</p>
+          {/* Kaydet/Güncelle Butonu */}
+          <div className="w-full">
+            <Button
+              type="submit"
+              className="w-full py-5"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? "Kaydediliyor..."
+                : defaultValues
+                ? "Raporu Güncelle"
+                : "Raporu Kaydet"}
+            </Button>
           </div>
         </div>
-
-        <Button
-          type="submit"
-          className="w-full py-6 my-6"
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? "Kaydediliyor..."
-            : defaultValues
-            ? "Raporu Güncelle"
-            : "Raporu Kaydet"}
-        </Button>
       </form>
     </div>
   );
