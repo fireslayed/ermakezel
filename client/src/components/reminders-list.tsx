@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Alarm, CalendarClock, Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { AlarmClock, CalendarClock, Check, Loader2, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
@@ -145,7 +145,7 @@ export function RemindersList() {
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Alarm className="h-5 w-5" />
+            <AlarmClock className="h-5 w-5" />
             Hatırlatıcılar
           </CardTitle>
           <ReminderForm 

@@ -16,6 +16,7 @@ import {
   Map,
   FileText,
   Package,
+  Bell,
 } from "lucide-react";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -56,6 +57,23 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
     logoutMutation.mutate();
   };
   
+  // Okunmamış bildirimleri getir
+  const { data: unreadNotifications } = useQuery({
+    queryKey: ['/api/notifications/unread'],
+    queryFn: async () => {
+      try {
+        const data = await apiRequest('/api/notifications/unread');
+        return data || [];
+      } catch (error) {
+        return [];
+      }
+    },
+    enabled: !!user, // Kullanıcı oturum açtıysa etkinleştir
+    refetchInterval: 60000, // Her dakika kontrol et
+  });
+
+  const unreadCount = unreadNotifications?.length || 0;
+
   const navItems = [
     {
       title: "Gösterge Paneli",
@@ -86,6 +104,12 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       title: "Parçalar",
       href: "/parts",
       icon: <Package className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Bildirimler",
+      href: "/notifications",
+      icon: <Bell className="mr-2 h-4 w-4" />,
+      badge: unreadCount > 0 ? unreadCount : undefined,
     },
     {
       title: "Ayarlar",
@@ -127,9 +151,16 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
                   className="w-full justify-start"
                   asChild
                 >
-                  <Link href={item.href}>
-                    {item.icon}
-                    {item.title}
+                  <Link href={item.href} className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      {item.icon}
+                      {item.title}
+                    </div>
+                    {item.badge && (
+                      <span className="bg-destructive text-destructive-foreground text-xs px-1.5 py-0.5 rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 </Button>
               ))}
