@@ -65,8 +65,9 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Set a custom port
-  const port = process.env.PORT || 3000;
+  // Set a custom port for Replit compatibility
+  const port = parseInt(process.env.PORT || '5000'); // Replit 5000 portunu bekliyor
+  
   server.listen(port, () => { 
     log(`serving on port ${port}`);
   });
