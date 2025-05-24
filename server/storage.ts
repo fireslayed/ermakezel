@@ -1,10 +1,11 @@
 import { 
-  users, tasks, projects, reports, parts,
+  users, tasks, projects, reports, parts, plans,
   type User, type InsertUser,
   type Task, type InsertTask,
   type Project, type InsertProject,
   type Report, type InsertReport,
-  type Part, type InsertPart
+  type Part, type InsertPart,
+  type Plan, type InsertPlan
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sql } from "drizzle-orm";
@@ -45,6 +46,13 @@ export interface IStorage {
   createPart(part: InsertPart, qrCode?: string): Promise<Part>;
   updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined>;
   deletePart(id: number): Promise<boolean>;
+  
+  // Plan operations
+  getPlans(userId: number): Promise<Plan[]>;
+  getPlan(id: number): Promise<Plan | undefined>;
+  createPlan(plan: InsertPlan): Promise<Plan>;
+  updatePlan(id: number, plan: Partial<InsertPlan>): Promise<Plan | undefined>;
+  deletePlan(id: number): Promise<boolean>;
   
   // Dashboard stats
   getTaskStats(userId: number): Promise<{
@@ -345,6 +353,38 @@ export class DatabaseStorage implements IStorage {
       pending: Number(pendingResult[0]?.count || 0),
       overdue: Number(overdueResult[0]?.count || 0)
     };
+  }
+  
+  // Plan operations
+  async getPlans(userId: number): Promise<Plan[]> {
+    return await db.select().from(plans).where(eq(plans.userId, userId));
+  }
+  
+  async getPlan(id: number): Promise<Plan | undefined> {
+    const [plan] = await db.select().from(plans).where(eq(plans.id, id));
+    return plan;
+  }
+  
+  async createPlan(insertPlan: InsertPlan): Promise<Plan> {
+    const [plan] = await db.insert(plans).values(insertPlan).returning();
+    return plan;
+  }
+  
+  async updatePlan(id: number, planUpdate: Partial<InsertPlan>): Promise<Plan | undefined> {
+    const [plan] = await db
+      .update(plans)
+      .set({
+        ...planUpdate,
+        updatedAt: new Date(),
+      })
+      .where(eq(plans.id, id))
+      .returning();
+    return plan;
+  }
+  
+  async deletePlan(id: number): Promise<boolean> {
+    const result = await db.delete(plans).where(eq(plans.id, id)).returning();
+    return result.length > 0;
   }
 
   // Initialize demo data if needed

@@ -113,6 +113,41 @@ export const insertPartSchema = createInsertSchema(parts).omit({
   updatedAt: true,
 });
 
+// Plan model
+export const plans = pgTable("plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  userId: integer("user_id").notNull(),
+  content: json("content").$type<{
+    backgroundImages: Array<{
+      id: string;
+      url: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>;
+    points: Array<{
+      id: string;
+      x: number;
+      y: number;
+      notes: string[];
+      images: string[];
+      parts: number[];
+    }>;
+  }>().default({ backgroundImages: [], points: [] }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPlanSchema = createInsertSchema(plans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type LoginCredentials = z.infer<typeof loginSchema>;
 export type Part = typeof parts.$inferSelect;
 export type InsertPart = z.infer<typeof insertPartSchema>;
+export type Plan = typeof plans.$inferSelect;
+export type InsertPlan = z.infer<typeof insertPlanSchema>;
