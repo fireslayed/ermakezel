@@ -122,9 +122,10 @@ export function ExportButtons({
       const link = document.createElement("a");
       
       // Tarayıcı desteklerine göre indirme işlemi
-      if (navigator.msSaveBlob) {
+      const nav = navigator as any;
+      if (nav.msSaveBlob) {
         // IE 10+
-        navigator.msSaveBlob(blob, `${fileName}.csv`);
+        nav.msSaveBlob(blob, `${fileName}.csv`);
       } else {
         // Modern tarayıcılar
         const url = URL.createObjectURL(blob);

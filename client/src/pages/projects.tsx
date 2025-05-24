@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash, Folder } from "lucide-react";
+import { ExportButtons } from "@/components/export-buttons";
 
 const projectFormSchema = z.object({
   name: z.string().min(3, "Project name must be at least 3 characters"),
@@ -187,10 +188,17 @@ export default function Projects() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Projects</h2>
-        <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" /> New Project
-        </Button>
+        <h2 className="text-3xl font-bold tracking-tight">Projeler</h2>
+        <div className="flex space-x-2">
+          <ExportButtons 
+            data={projects || []} 
+            fileName="projeler" 
+            pdfTitle="Projeler Listesi" 
+          />
+          <Button onClick={openCreateDialog}>
+            <Plus className="mr-2 h-4 w-4" /> Yeni Proje
+          </Button>
+        </div>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
