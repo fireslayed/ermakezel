@@ -1,0 +1,84 @@
+Yer Bildirimleri Sayfası – Sistem Özellikleri
+🧭 1. Otomatik Konum Algılama (GPS)
+Mobil cihazlarda konum, GPS ile otomatik alınır
+
+Web tarayıcıda konum izni verilirse konum tespit edilir
+
+Masaüstü yazılımda elle yazılır (şehir / lokasyon)
+
+⏰ 2. Belirli Saatlerde Hatırlatma
+Her sabah belirli saatte (örnek: 08:30) kullanıcıya sistem mesajı:
+
+“Bugünkü yer bildiriminizi girmediniz.”
+
+Bildirim yapılana kadar sistem hatırlatır
+
+🗺️ 3. Harita Üzerinde Konum Gösterme
+Tüm kullanıcıların gönderdiği konumlar haritada görüntülenebilir
+
+Harita: Google Maps / OpenStreetMap
+
+Noktaya tıklayınca tarih, kullanıcı adı ve açıklama açılır
+
+💬 4. WhatsApp Tarzı "Yer Bildirim Paneli"
+Yer bildirimi sayfası, sohbet ekranı gibi olacak
+
+Her kullanıcı farklı renkte mesaj balonu ile gösterilecek
+
+Kullanıcı:
+
+Konum yazısı girer
+
+İsteğe bağlı olarak konum otomatik eklenir
+
+“Gönder” butonuna basar → mesaj anında görünür
+
+🧾 5. Mesaj İçeriği
+Her yer bildirimi şu bilgileri içerir:
+
+📅 Tarih & Saat
+
+👤 Kullanıcı adı
+
+📍 Konum metni (veya otomatik GPS)
+
+📌 Harita ikonu (tıklanırsa haritada gösterir)
+
+🗑️ 6. Silme Yetkisi Sadece Root’a Aittir
+Kullanıcılar kendi mesajlarını silemez
+
+Sadece root kullanıcı "sil" ikonunu görür
+
+Silinen mesaj sistemden tamamen kaldırılır veya “silindi” işareti bırakılır (isteğe göre)
+
+🎨 7. Renkli Kullanıcı Mesajları
+Her kullanıcıya sabit bir renk atanır (örnek: mavi, turuncu, yeşil)
+
+Aynı kullanıcı her gün aynı renkle görünür
+
+Mesajlar baloncuk şeklinde, WhatsApp benzeri hizalanır:
+
+Kendin sağda
+
+Diğerleri solda
+
+❌ 8. Emojiler, medya, dosya vb. yok
+Sistem sade olacak
+
+Sadece konum metni + otomatik GPS bilgisi + tarih gösterilir
+
+Emoji, dosya yükleme, görsel yok
+
+🔁 9. Anlık Yenileme
+Mesaj gönderildiğinde herkesin ekranı otomatik güncellenir (WebSocket)
+
+Sayfayı yenilemeye gerek kalmaz
+
+Mobilde push notification entegresi yapılabilir (opsiyonel)
+
+📚 10. Bildirim Geçmişi Görüntüleme
+Eski yer bildirimleri tarih filtreli olarak görüntülenebilir
+
+Filtre: Kullanıcı, tarih aralığı, konum adı
+
+Admin/export opsiyonu: Excel’e aktar butonu
