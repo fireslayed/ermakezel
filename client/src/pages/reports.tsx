@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { ReportDialog } from "@/components/report/report-dialog";
 
 import {
   Card,
@@ -549,18 +550,20 @@ export default function Reports() {
               Yeni Rapor
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Yeni Rapor Oluştur</DialogTitle>
               <DialogDescription>
                 Yeni bir rapor oluşturmak için aşağıdaki formu doldurun
               </DialogDescription>
             </DialogHeader>
-            <ReportForm 
-              onSubmit={handleCreateReport} 
-              projects={projects}
-              isSubmitting={createMutation.isPending} 
-            />
+            <div className="max-w-full box-border">
+              <ReportForm 
+                onSubmit={handleCreateReport} 
+                projects={projects}
+                isSubmitting={createMutation.isPending} 
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
