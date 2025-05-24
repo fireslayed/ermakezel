@@ -57,22 +57,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReport(insertReport: InsertReport): Promise<Report> {
-    const reportWithDefaults = {
+    const result = await db.insert(reports).values({
       ...insertReport,
       createdAt: new Date(),
       updatedAt: new Date()
-    };
-    const result = await db.insert(reports).values(reportWithDefaults).returning();
+    }).returning();
     return result[0];
   }
 
   async updateReport(id: number, reportUpdate: Partial<InsertReport>): Promise<Report | undefined> {
-    const updateData = {
-      ...reportUpdate,
-      updatedAt: new Date()
-    };
     const result = await db.update(reports)
-      .set(updateData)
+      .set({
+        ...reportUpdate,
+        updatedAt: new Date()
+      })
       .where(eq(reports.id, id))
       .returning();
     return result.length > 0 ? result[0] : undefined;

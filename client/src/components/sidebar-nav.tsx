@@ -14,6 +14,7 @@ import {
   Sparkles,
   User,
   Map,
+  FileText,
 } from "lucide-react";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -64,6 +65,11 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       title: "Görevler",
       href: "/tasks",
       icon: <CheckSquare className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Raporlar",
+      href: "/reports",
+      icon: <FileText className="mr-2 h-4 w-4" />,
     },
     {
       title: "Projeler",
