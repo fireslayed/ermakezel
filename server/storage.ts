@@ -1,9 +1,10 @@
 import { 
-  users, tasks, projects, reports,
+  users, tasks, projects, reports, parts,
   type User, type InsertUser,
   type Task, type InsertTask,
   type Project, type InsertProject,
-  type Report, type InsertReport
+  type Report, type InsertReport,
+  type Part, type InsertPart
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sql } from "drizzle-orm";
@@ -36,6 +37,14 @@ export interface IStorage {
   deleteReport(id: number): Promise<boolean>;
   sendReport(id: number, emailTo: string): Promise<boolean>;
   
+  // Part operations
+  getParts(userId: number): Promise<Part[]>;
+  getPart(id: number): Promise<Part | undefined>;
+  getPartByPartNumber(partNumber: string): Promise<Part | undefined>;
+  createPart(part: InsertPart, qrCode?: string): Promise<Part>;
+  updatePart(id: number, part: Partial<InsertPart>): Promise<Part | undefined>;
+  deletePart(id: number): Promise<boolean>;
+  
   // Dashboard stats
   getTaskStats(userId: number): Promise<{
     total: number;
@@ -46,6 +55,48 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Part operations
+  async getParts(userId: number): Promise<Part[]> {
+    return await db.select().from(parts).where(eq(parts.userId, userId));
+  }
+
+  async getPart(id: number): Promise<Part | undefined> {
+    const result = await db.select().from(parts).where(eq(parts.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getPartByPartNumber(partNumber: string): Promise<Part | undefined> {
+    const result = await db.select().from(parts).where(eq(parts.partNumber, partNumber));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createPart(insertPart: InsertPart, qrCode?: string): Promise<Part> {
+    const partWithDefaults = {
+      ...insertPart,
+      qrCode: qrCode || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    const result = await db.insert(parts).values(partWithDefaults).returning();
+    return result[0];
+  }
+
+  async updatePart(id: number, partUpdate: Partial<InsertPart>): Promise<Part | undefined> {
+    const result = await db.update(parts)
+      .set({
+        ...partUpdate,
+        updatedAt: new Date()
+      })
+      .where(eq(parts.id, id))
+      .returning();
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deletePart(id: number): Promise<boolean> {
+    const result = await db.delete(parts).where(eq(parts.id, id)).returning();
+    return result.length > 0;
+  }
+  
   // Report operations
   async getReports(userId: number): Promise<Report[]> {
     return await db.select().from(reports).where(eq(reports.userId, userId));

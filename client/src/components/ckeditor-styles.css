@@ -1,10 +1,12 @@
 .ck-editor__editable_inline {
-  max-height: 300px;
+  max-height: 300px !important;
   overflow-y: auto !important;
+  min-height: 200px !important;
 }
 
 .ck.ck-editor__main>.ck-editor__editable {
   width: 100% !important;
+  overflow-x: hidden !important;
 }
 
 .ck.ck-toolbar {
@@ -39,4 +41,31 @@
 .ck.ck-button {
   white-space: nowrap;
   padding: 4px 8px !important;
+  margin: 2px !important;
+}
+
+/* CKEditor toolbar daha iyi görünüm */
+.ck.ck-toolbar {
+  border-radius: 4px !important;
+  padding: 2px !important;
+}
+
+/* Dialog içinde overflow sorunu çözümü */
+.DialogContent {
+  max-width: 900px !important;
+  width: 90vw !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+/* Form elemanları için genel stil düzeltmeleri */
+.box-border {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+/* Select menüleri için düzeltme */
+.SelectTrigger {
+  width: 100% !important;
+  box-sizing: border-box !important;
 }

@@ -1,0 +1,89 @@
+ Gösterge Paneline Buton Eklenmesi
+Buton adı: “Parça Ekle”
+
+Yerleşim: Gösterge panelinin sağ üst kısmı veya üst menü çubuğu
+
+Tetikleme: Butona tıklanınca aşağıdakilerden biri açılmalı:
+
+Modal pencere
+
+Ya da ayrı bir /parca-ekle sayfası
+
+2️⃣ Parça Ekleme Formu Özellikleri
+🧾 Form Alanları:
+Alan Adı	Tip	Açıklama
+Parça Adı	Text input	Zorunlu
+Parça Numarası	Text input (örnek: P-00123)	Zorunlu, unique
+QR Kod	Otomatik oluştur	parça numarası veya parça JSON datası içeriğiyle
+Ürün Resmi	Resim yükleme (image upload)	Dosya seçildiğinde anında önizleme
+Ölçüler	Üç ayrı input (uzunluk, genişlik, yükseklik)	Tek alanda veya ayrı ayrı
+Ağırlık	Number input (kg/gr)	Ondalık desteklemeli
+Renk	Color picker veya Text	Görsel sınıflandırma
+Açıklama / Not	CKEditor (Rich Text)	Biçimlendirme, tablo, bağlantı desteklemeli
+
+🔍 Fonksiyonel Davranışlar:
+✅ QR Kod Otomatik Oluşmalı:
+
+Parça numarası girildiğinde QR kod anında üretilmeli.
+
+QR önizlemesi formda görünsün.
+
+İstenirse tüm parça datasını encode eden JSON QR da desteklenebilir.
+
+✅ Resim Yükleme:
+
+Yüklenen resim anında küçük boyutlu olarak görüntülenmeli.
+
+Maksimum boyut ve dosya türü kontrolü yapılmalı.
+
+✅ "Önizle" Butonu:
+
+Formda girilen tüm alanları yeni bir kutuda HTML olarak stilize şekilde göster.
+
+Özellikle CKEditor çıktısı doğru yansıtılmalı.
+
+✅ "Kaydet" Butonu:
+
+Form validation sonrası veriler veritabanına gönderilmeli (API post).
+
+QR görseli base64 veya ayrı dosya olarak da kaydedilebilir.
+
+✅ "Yazdır" Butonu (opsiyonel):
+
+QR kod + parça bilgilerini içeren özel bir yazdırma çıktısı oluşturur.
+
+window.print() ile sadece bu içeriği yazdırır.
+
+🛡️ Teknik Detaylar:
+Form responsive olmalı.
+
+Tüm bileşenler grid veya flex sistemine göre hizalanmalı.
+
+QR oluşturmak için JS kütüphanesi: qrcode veya qrcode.react
+
+Resim önizleme: FileReader() ile yapılmalı.
+
+API uç noktası: POST /api/parca-ekle
+
+🎯 Örnek UI Akışı:
+Kullanıcı "Parça Ekle" butonuna basar
+
+Modal açılır
+
+Alanları doldurur, QR otomatik oluşur, resim önizlemesi görünür
+
+"Önizle" ile kontrol eder
+
+"Kaydet" ile veritabanına gönderir
+
+(İsteğe bağlı) Yazdır'a basarak çıktısını alır
+
+🟩 Bonus Özellik (Eklersen daha iyi olur):
+🕓 "Eklenme Tarihi" otomatik eklenebilir
+
+👤 "Ekleyen Kullanıcı" oturumdan alınabilir
+
+🏷️ "Kategori" alanı (mekanik, elektrik, sensör vs.)
+
+📎 Teknik çizim dosyası ekleme (PDF)
+

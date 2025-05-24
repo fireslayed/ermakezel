@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, real, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -87,4 +87,33 @@ export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
+// Parça model
+export const parts = pgTable("parts", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  partNumber: varchar("part_number", { length: 50 }).notNull().unique(),
+  qrCode: text("qr_code"),
+  image: text("image"),
+  length: real("length"),
+  width: real("width"),
+  height: real("height"),
+  weight: real("weight"),
+  color: text("color"),
+  description: text("description"),
+  userId: integer("user_id").notNull(),
+  category: text("category"),
+  technicalDrawing: text("technical_drawing"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPartSchema = createInsertSchema(parts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  qrCode: true,
+});
+
 export type LoginCredentials = z.infer<typeof loginSchema>;
+export type Part = typeof parts.$inferSelect;
+export type InsertPart = z.infer<typeof insertPartSchema>;
