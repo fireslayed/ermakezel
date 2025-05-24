@@ -166,7 +166,7 @@ export default function LocationReportPage() {
   
   // Yer bildirimi oluşturma
   const createMutation = useMutation({
-    mutationFn: (data: { location: string; description: string, gpsLat: number | null; gpsLong: number | null }) => {
+    mutationFn: (data: { location: string; description: string, gpsLat: number | null; gpsLong: number | null; reportDate: string }) => {
       return apiRequest('/api/location-reports', 'POST', data);
     },
     onSuccess: () => {
@@ -274,6 +274,9 @@ export default function LocationReportPage() {
       return;
     }
     
+    // Tarih ekle (bugün için)
+    const today = new Date().toISOString();
+    
     if (editingReport) {
       updateMutation.mutate({
         id: editingReport.id,
@@ -287,7 +290,8 @@ export default function LocationReportPage() {
         location,
         description,
         gpsLat,
-        gpsLong
+        gpsLong,
+        reportDate: today
       });
     }
   };

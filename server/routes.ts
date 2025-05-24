@@ -479,6 +479,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Yer Bildirimi (Location Report) API rotaları
+  // Bugünkü yer bildirimini al
+  app.get('/api/location-reports/today', requireAuth, async (req, res) => {
+    try {
+      const report = await storage.getTodayLocationReport(req.session.userId!);
+      res.json(report || null);
+    } catch (error) {
+      console.error('Bugünkü yer bildirimi alınırken hata:', error);
+      res.status(500).json({ message: 'Bugünkü yer bildirimi alınamadı' });
+    }
+  });
+  
+  // Kullanıcının tüm yer bildirimlerini al
+  app.get('/api/location-reports', requireAuth, async (req, res) => {
+    try {
+      const reports = await storage.getUserLocationReports(req.session.userId!);
+      res.json(reports);
+    } catch (error) {
+      console.error('Yer bildirimleri alınırken hata:', error);
+      res.status(500).json({ message: 'Yer bildirimleri alınamadı' });
+    }
+  });
+  
+  // Admin için tüm kullanıcıların yer bildirimlerini al
+  app.get('/api/admin/location-reports', requireAuth, async (req, res) => {
+    try {
+      // İsteğe bağlı olarak: Sadece admin (ID=1) için erişim sağla
+      if (req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' });
+      }
+      
+      const reports = await storage.getAllLocationReports();
+      res.json(reports);
+    } catch (error) {
+      console.error('Tüm yer bildirimleri alınırken hata:', error);
+      res.status(500).json({ message: 'Yer bildirimleri alınamadı' });
+    }
+  });
+  
+  // Yeni yer bildirimi oluştur
+  app.post('/api/location-reports', requireAuth, async (req, res) => {
+    try {
+      const reportData = insertLocationReportSchema.parse({
+        ...req.body,
+        userId: req.session.userId
+      });
+      
+      const report = await storage.createLocationReport(reportData);
+      
+      // WebSocket ile bildirim gönder
+      const user = await storage.getUser(req.session.userId);
+      notifyLocationReportCreated({...report, user});
+      
+      res.status(201).json(report);
+    } catch (error) {
+      console.error('Yer bildirimi oluşturulurken hata:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Doğrulama hatası', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Yer bildirimi oluşturulamadı' });
+    }
+  });
+  
+  // Yer bildirimini güncelle
+  app.put('/api/location-reports/:id', requireAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Geçersiz yer bildirimi ID' });
+      }
+      
+      // Yer bildirimini kontrol et
+      const report = await storage.getLocationReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Yer bildirimi bulunamadı' });
+      }
+      
+      // Sadece kendi yer bildirimlerini güncelleyebilir
+      if (report.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu yer bildirimini güncelleme yetkiniz yok' });
+      }
+      
+      const updateData = req.body;
+      const updatedReport = await storage.updateLocationReport(reportId, updateData);
+      
+      // WebSocket ile bildirim gönder
+      if (updatedReport) {
+        const user = await storage.getUser(updatedReport.userId);
+        notifyLocationReportUpdated({...updatedReport, user});
+      }
+      
+      res.json(updatedReport);
+    } catch (error) {
+      console.error('Yer bildirimi güncellenirken hata:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Doğrulama hatası', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Yer bildirimi güncellenemedi' });
+    }
+  });
+  
+  // Yer bildirimini sil
+  app.delete('/api/location-reports/:id', requireAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Geçersiz yer bildirimi ID' });
+      }
+      
+      // Yer bildirimini kontrol et
+      const report = await storage.getLocationReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Yer bildirimi bulunamadı' });
+      }
+      
+      // Sadece kendi yer bildirimlerini veya admin (ID=1) silebilir
+      if (report.userId !== req.session.userId && req.session.userId !== 1) {
+        return res.status(403).json({ message: 'Bu yer bildirimini silme yetkiniz yok' });
+      }
+      
+      const success = await storage.deleteLocationReport(reportId);
+      
+      // WebSocket ile bildirim gönder
+      if (success) {
+        notifyLocationReportDeleted(reportId);
+      }
+      
+      if (success) {
+        res.json({ message: 'Yer bildirimi başarıyla silindi' });
+      } else {
+        res.status(500).json({ message: 'Yer bildirimi silinemedi' });
+      }
+    } catch (error) {
+      console.error('Yer bildirimi silinirken hata:', error);
+      res.status(500).json({ message: 'Yer bildirimi silinemedi' });
+    }
+  });
+
   // Dashboard stats
   app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
     try {
@@ -1208,5 +1346,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // WebSocket sunucusunu başlat
+  setupWebSocket(httpServer);
+  
   return httpServer;
 }
