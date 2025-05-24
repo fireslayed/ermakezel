@@ -430,7 +430,7 @@ export default function Plan() {
             />
             <label htmlFor="background-image-upload">
               <Button variant="outline" size="sm" asChild>
-                <span>Add Image Layer</span>
+                <span>Resim Katmanı Ekle</span>
               </Button>
             </label>
           </div>
@@ -442,7 +442,7 @@ export default function Plan() {
               onClick={() => confirmDeleteLayer(selectedLayerId)}
               className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
             >
-              Delete Layer
+              Katmanı Sil
             </Button>
           )}
         </div>
@@ -585,14 +585,14 @@ export default function Plan() {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Image Layer</AlertDialogTitle>
+            <AlertDialogTitle>Resim Katmanını Sil</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this image layer? This action cannot be undone.
+              Bu resim katmanını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteLayer}>Delete</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLayer}>Sil</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
