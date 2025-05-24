@@ -20,7 +20,7 @@ import Settings from "@/pages/settings";
 import Parts from "@/pages/parts";
 import Notifications from "@/pages/notifications";
 import NotFound from "@/pages/not-found";
-import LocationReport from "@/pages/location-report";
+import LocationReport from "@/pages/location-report-compact";
 
 function Router() {
   return (

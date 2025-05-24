@@ -103,9 +103,7 @@ const formatDate = (dateStr: string) => {
 export default function LocationReportPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("chat");
   const [editingReport, setEditingReport] = useState<LocationReport | null>(null);
-  const [showMap, setShowMap] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
   // Form durumu
@@ -113,11 +111,6 @@ export default function LocationReportPage() {
   const [description, setDescription] = useState("");
   const [gpsLat, setGpsLat] = useState<number | null>(null);
   const [gpsLong, setGpsLong] = useState<number | null>(null);
-  
-  // Filtre durumu
-  const [dateFilter, setDateFilter] = useState<string | null>(null);
-  const [userFilter, setUserFilter] = useState<number | null>(null);
-  const [locationFilter, setLocationFilter] = useState<string>("");
   
   // Bugünkü yer bildirimini al
   const { 
