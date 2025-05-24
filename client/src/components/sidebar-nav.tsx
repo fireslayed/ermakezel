@@ -13,6 +13,7 @@ import {
   LogOut,
   Sparkles,
   User,
+  Map,
 } from "lucide-react";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -68,6 +69,11 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       title: "Projects",
       href: "/projects",
       icon: <Folder className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Plan",
+      href: "/plan",
+      icon: <Map className="mr-2 h-4 w-4" />,
     },
     {
       title: "Settings",

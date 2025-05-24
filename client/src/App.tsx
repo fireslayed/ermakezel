@@ -13,6 +13,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Tasks from "@/pages/tasks";
 import Projects from "@/pages/projects";
+import Plan from "@/pages/plan";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
@@ -45,6 +46,12 @@ function Router() {
         </AppLayout>
       </Route>
       
+      <Route path="/plan">
+        <AppLayout>
+          <Plan />
+        </AppLayout>
+      </Route>
+
       <Route path="/settings">
         <AppLayout>
           <Settings />
