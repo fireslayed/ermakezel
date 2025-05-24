@@ -56,17 +56,17 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
   
   const navItems = [
     {
-      title: "Dashboard",
+      title: "Gösterge Paneli",
       href: "/dashboard",
       icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
     },
     {
-      title: "Tasks",
+      title: "Görevler",
       href: "/tasks",
       icon: <CheckSquare className="mr-2 h-4 w-4" />,
     },
     {
-      title: "Projects",
+      title: "Projeler",
       href: "/projects",
       icon: <Folder className="mr-2 h-4 w-4" />,
     },
@@ -76,7 +76,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       icon: <Map className="mr-2 h-4 w-4" />,
     },
     {
-      title: "Settings",
+      title: "Ayarlar",
       href: "/settings",
       icon: <Settings className="mr-2 h-4 w-4" />,
     },
@@ -88,7 +88,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
         <div className="px-4 py-2">
           <div className="flex items-center mb-8">
             <Sparkles className="h-6 w-6 text-primary mr-2" />
-            <h2 className="text-lg font-semibold tracking-tight">TaskMaster Pro</h2>
+            <h2 className="text-lg font-semibold tracking-tight">ErmkaPoint Beta v2</h2>
           </div>
           
           <div className="mb-8 flex items-center gap-2">
@@ -133,7 +133,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
               disabled={logoutMutation.isPending}
             >
               <LogOut className="mr-2 h-4 w-4" />
-              {logoutMutation.isPending ? "Logging out..." : "Log out"}
+              {logoutMutation.isPending ? "Çıkış yapılıyor..." : "Çıkış Yap"}
             </Button>
           </div>
         </div>
