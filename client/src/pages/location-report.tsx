@@ -291,7 +291,7 @@ export default function LocationReportPage() {
         description,
         gpsLat,
         gpsLong,
-        reportDate: today
+        reportDate: new Date()
       });
     }
   };
