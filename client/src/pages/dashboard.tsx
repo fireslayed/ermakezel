@@ -66,7 +66,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {reports.slice(0, 5).map((report: any) => (
                   <div key={report.id} className="flex items-start justify-between border-b pb-4">
-                    <div className="flex items-start space-x-4">
+                    <Link href={`/reports/${report.id}`} className="flex items-start space-x-4 flex-1 hover:bg-accent/10 rounded-md p-1 transition-colors">
                       <div className="bg-primary/10 p-2 rounded-md">
                         <FileText className="h-5 w-5" />
                       </div>
@@ -81,7 +81,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                     <div className="flex items-center">
                       <Badge className={reportStatusMap[report.status]?.color || "bg-gray-100"}>
                         <span className="flex items-center">
