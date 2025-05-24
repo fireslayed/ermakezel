@@ -1,0 +1,42 @@
+.ck-editor__editable_inline {
+  max-height: 300px;
+  overflow-y: auto !important;
+}
+
+.ck.ck-editor__main>.ck-editor__editable {
+  width: 100% !important;
+}
+
+.ck.ck-toolbar {
+  flex-wrap: wrap !important;
+  width: 100% !important;
+}
+
+.ck.ck-editor {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.ck.ck-reset.ck-editor.ck-rounded-corners {
+  max-width: 100% !important;
+}
+
+.ck.ck-editor__top {
+  overflow-x: hidden !important;
+}
+
+.ck.ck-toolbar__items {
+  flex-wrap: wrap !important;
+}
+
+/* Modal düzenleme iyileştirmeleri */
+.report-dialog-content {
+  width: 90vw !important;
+  max-width: 900px !important;
+}
+
+/* CKEditor butonlar düzgün görünsün */
+.ck.ck-button {
+  white-space: nowrap;
+  padding: 4px 8px !important;
+}
