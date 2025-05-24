@@ -297,6 +297,74 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
+  // Part operations
+  async getParts(userId: number): Promise<Part[]> {
+    return await db
+      .select()
+      .from(parts)
+      .where(eq(parts.userId, userId));
+  }
+
+  async getPart(id: number): Promise<Part | undefined> {
+    const result = await db
+      .select()
+      .from(parts)
+      .where(eq(parts.id, id));
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async getPartByPartNumber(partNumber: string): Promise<Part | undefined> {
+    const result = await db
+      .select()
+      .from(parts)
+      .where(eq(parts.partNumber, partNumber));
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createPart(insertPart: InsertPart, qrCode?: string): Promise<Part> {
+    const newPart = {
+      ...insertPart,
+      qrCode: qrCode || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [part] = await db
+      .insert(parts)
+      .values(newPart)
+      .returning();
+    
+    return part;
+  }
+
+  async updatePart(id: number, partUpdate: Partial<InsertPart>): Promise<Part | undefined> {
+    const part = await this.getPart(id);
+    if (!part) return undefined;
+    
+    const updateData = {
+      ...partUpdate,
+      updatedAt: new Date()
+    };
+    
+    const [updatedPart] = await db
+      .update(parts)
+      .set(updateData)
+      .where(eq(parts.id, id))
+      .returning();
+    
+    return updatedPart;
+  }
+
+  async deletePart(id: number): Promise<boolean> {
+    const result = await db
+      .delete(parts)
+      .where(eq(parts.id, id));
+    
+    return true;
+  }
+
   // Dashboard stats
   async getTaskStats(userId: number): Promise<{ total: number; completed: number; pending: number; overdue: number; }> {
     // Get total tasks

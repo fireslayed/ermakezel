@@ -482,6 +482,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parça API rotaları
+  app.get('/api/parts', requireAuth, async (req, res) => {
+    try {
+      const parts = await storage.getParts(req.session.userId!);
+      res.json(parts);
+    } catch (error) {
+      console.error('Error fetching parts:', error);
+      res.status(500).json({ message: 'Parçalar alınırken hata oluştu' });
+    }
+  });
+
+  app.get('/api/parts/:id', requireAuth, async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      if (isNaN(partId)) {
+        return res.status(400).json({ message: 'Geçersiz parça ID' });
+      }
+      
+      const part = await storage.getPart(partId);
+      
+      if (!part) {
+        return res.status(404).json({ message: 'Parça bulunamadı' });
+      }
+      
+      if (part.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Bu parçayı görüntüleme yetkiniz yok' });
+      }
+      
+      res.json(part);
+    } catch (error) {
+      console.error('Error fetching part:', error);
+      res.status(500).json({ message: 'Parça alınırken hata oluştu' });
+    }
+  });
+
+  app.post('/api/parts', requireAuth, async (req, res) => {
+    try {
+      const partData = insertPartSchema.parse(req.body);
+      
+      // Parça numarası benzersiz olmalı
+      const existingPart = await storage.getPartByPartNumber(partData.partNumber);
+      if (existingPart) {
+        return res.status(400).json({ message: 'Bu parça numarası zaten kullanılıyor' });
+      }
+
+      // QR kod oluştur
+      const QRCode = await import('qrcode');
+      const qrCodeData = JSON.stringify({
+        partNumber: partData.partNumber,
+        name: partData.name,
+        id: Date.now() // geçici ID, veritabanına kaydedilirken güncellenir
+      });
+      
+      // QR kod base64 olarak oluştur
+      const qrCodeImage = await QRCode.toDataURL(qrCodeData);
+      
+      // Parçayı userId ile ekle
+      const part = await storage.createPart({
+        ...partData,
+        userId: req.session.userId!
+      }, qrCodeImage);
+      
+      res.status(201).json(part);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Geçersiz veri formatı', errors: error.errors });
+      }
+      console.error('Error creating part:', error);
+      res.status(500).json({ message: 'Parça eklenirken hata oluştu' });
+    }
+  });
+
+  app.put('/api/parts/:id', requireAuth, async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      if (isNaN(partId)) {
+        return res.status(400).json({ message: 'Geçersiz parça ID' });
+      }
+      
+      const existingPart = await storage.getPart(partId);
+      
+      if (!existingPart) {
+        return res.status(404).json({ message: 'Parça bulunamadı' });
+      }
+      
+      if (existingPart.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Bu parçayı düzenleme yetkiniz yok' });
+      }
+
+      const partData = insertPartSchema.partial().parse(req.body);
+      
+      // Parça numarası değişiyorsa, benzersiz olmalı
+      if (partData.partNumber && partData.partNumber !== existingPart.partNumber) {
+        const duplicatePart = await storage.getPartByPartNumber(partData.partNumber);
+        if (duplicatePart) {
+          return res.status(400).json({ message: 'Bu parça numarası zaten kullanılıyor' });
+        }
+      }
+      
+      // QR kodu güncelle, parça numarası değiştiyse
+      let qrCodeImage = existingPart.qrCode;
+      if (partData.partNumber && partData.partNumber !== existingPart.partNumber) {
+        const QRCode = await import('qrcode');
+        const qrCodeData = JSON.stringify({
+          partNumber: partData.partNumber,
+          name: partData.name || existingPart.name,
+          id: existingPart.id
+        });
+        
+        // QR kod base64 olarak oluştur
+        qrCodeImage = await QRCode.toDataURL(qrCodeData);
+      }
+      
+      const updatedPart = await storage.updatePart(partId, {
+        ...partData,
+        qrCode: qrCodeImage
+      });
+      
+      res.json(updatedPart);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Geçersiz veri formatı', errors: error.errors });
+      }
+      console.error('Error updating part:', error);
+      res.status(500).json({ message: 'Parça güncellenirken hata oluştu' });
+    }
+  });
+
+  app.delete('/api/parts/:id', requireAuth, async (req, res) => {
+    try {
+      const partId = parseInt(req.params.id);
+      if (isNaN(partId)) {
+        return res.status(400).json({ message: 'Geçersiz parça ID' });
+      }
+      
+      const existingPart = await storage.getPart(partId);
+      
+      if (!existingPart) {
+        return res.status(404).json({ message: 'Parça bulunamadı' });
+      }
+      
+      if (existingPart.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Bu parçayı silme yetkiniz yok' });
+      }
+      
+      const deleted = await storage.deletePart(partId);
+      
+      if (deleted) {
+        res.json({ message: 'Parça başarıyla silindi' });
+      } else {
+        res.status(500).json({ message: 'Parça silinirken bir hata oluştu' });
+      }
+    } catch (error) {
+      console.error('Error deleting part:', error);
+      res.status(500).json({ message: 'Parça silinirken hata oluştu' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

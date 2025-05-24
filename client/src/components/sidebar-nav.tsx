@@ -15,6 +15,7 @@ import {
   User,
   Map,
   FileText,
+  Package,
 } from "lucide-react";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -80,6 +81,11 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
       title: "Plan",
       href: "/plan",
       icon: <Map className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: "Parçalar",
+      href: "/parts",
+      icon: <Package className="mr-2 h-4 w-4" />,
     },
     {
       title: "Ayarlar",

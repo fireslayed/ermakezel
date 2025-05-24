@@ -111,7 +111,6 @@ export const insertPartSchema = createInsertSchema(parts).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  qrCode: true,
 });
 
 export type LoginCredentials = z.infer<typeof loginSchema>;

@@ -16,6 +16,7 @@ import Projects from "@/pages/projects";
 import Plan from "@/pages/plan";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import Parts from "@/pages/parts";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -56,6 +57,12 @@ function Router() {
       <Route path="/plan">
         <AppLayout>
           <Plan />
+        </AppLayout>
+      </Route>
+
+      <Route path="/parts">
+        <AppLayout>
+          <Parts />
         </AppLayout>
       </Route>
 
