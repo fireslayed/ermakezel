@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -56,6 +56,28 @@ export const loginSchema = z.object({
   password: z.string().min(3, "Password must be at least 3 characters"),
 });
 
+// Report model
+export const reports = pgTable("reports", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  location: text("location"),
+  userId: integer("user_id").notNull(),
+  projectId: integer("project_id"),
+  reportType: text("report_type").default("daily"), // daily, maintenance, issue, etc.
+  emailTo: text("email_to"),
+  status: text("status").default("draft"), // draft, sent
+  attachments: json("attachments").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertReportSchema = createInsertSchema(reports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -63,4 +85,6 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;
 export type LoginCredentials = z.infer<typeof loginSchema>;

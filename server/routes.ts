@@ -5,7 +5,8 @@ import {
   loginSchema, 
   insertTaskSchema, 
   insertProjectSchema,
-  insertUserSchema
+  insertUserSchema,
+  insertReportSchema
 } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
@@ -327,6 +328,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ message: 'Failed to delete project' });
+    }
+  });
+
+  // Report routes
+  app.get('/api/reports', requireAuth, async (req, res) => {
+    try {
+      const reports = await storage.getReports(req.session.userId!);
+      res.json(reports);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch reports' });
+    }
+  });
+
+  app.get('/api/reports/:id', requireAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Invalid report ID' });
+      }
+      
+      const report = await storage.getReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+      
+      // Ensure user can only access their own reports
+      if (report.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch report' });
+    }
+  });
+
+  app.post('/api/reports', requireAuth, async (req, res) => {
+    try {
+      // Set userId from session
+      const reportData = { ...req.body, userId: req.session.userId! };
+      const validatedReport = insertReportSchema.parse(reportData);
+      
+      const report = await storage.createReport(validatedReport);
+      res.status(201).json(report);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to create report' });
+    }
+  });
+
+  app.patch('/api/reports/:id', requireAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Invalid report ID' });
+      }
+      
+      // Check if report exists and belongs to user
+      const report = await storage.getReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+      
+      if (report.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      // Parse update data
+      const updateData = { ...req.body };
+      delete updateData.id; // Don't allow updating ID
+      delete updateData.userId; // Don't allow changing owner
+      
+      const updatedReport = await storage.updateReport(reportId, updateData);
+      res.json(updatedReport);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update report' });
+    }
+  });
+
+  app.delete('/api/reports/:id', requireAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Invalid report ID' });
+      }
+      
+      // Check if report exists and belongs to user
+      const report = await storage.getReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+      
+      if (report.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      const success = await storage.deleteReport(reportId);
+      if (success) {
+        res.json({ message: 'Report deleted successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to delete report' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete report' });
+    }
+  });
+
+  app.post('/api/reports/:id/send', requireAuth, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Invalid report ID' });
+      }
+      
+      // Check if report exists and belongs to user
+      const report = await storage.getReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+      
+      if (report.userId !== req.session.userId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      // Validate email
+      const { emailTo } = req.body;
+      if (!emailTo || typeof emailTo !== 'string' || !emailTo.includes('@')) {
+        return res.status(400).json({ message: 'Valid email address is required' });
+      }
+      
+      const success = await storage.sendReport(reportId, emailTo);
+      if (success) {
+        res.json({ message: 'Report sent successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to send report' });
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to send report' });
     }
   });
 

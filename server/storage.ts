@@ -1,8 +1,9 @@
 import { 
-  users, tasks, projects,
+  users, tasks, projects, reports,
   type User, type InsertUser,
   type Task, type InsertTask,
-  type Project, type InsertProject
+  type Project, type InsertProject,
+  type Report, type InsertReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sql } from "drizzle-orm";
@@ -27,6 +28,14 @@ export interface IStorage {
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
   
+  // Report operations
+  getReports(userId: number): Promise<Report[]>;
+  getReport(id: number): Promise<Report | undefined>;
+  createReport(report: InsertReport): Promise<Report>;
+  updateReport(id: number, report: Partial<InsertReport>): Promise<Report | undefined>;
+  deleteReport(id: number): Promise<boolean>;
+  sendReport(id: number, emailTo: string): Promise<boolean>;
+  
   // Dashboard stats
   getTaskStats(userId: number): Promise<{
     total: number;
@@ -37,6 +46,63 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Report operations
+  async getReports(userId: number): Promise<Report[]> {
+    return await db.select().from(reports).where(eq(reports.userId, userId));
+  }
+
+  async getReport(id: number): Promise<Report | undefined> {
+    const result = await db.select().from(reports).where(eq(reports.id, id));
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    const reportWithDefaults = {
+      ...insertReport,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    const result = await db.insert(reports).values(reportWithDefaults).returning();
+    return result[0];
+  }
+
+  async updateReport(id: number, reportUpdate: Partial<InsertReport>): Promise<Report | undefined> {
+    const updateData = {
+      ...reportUpdate,
+      updatedAt: new Date()
+    };
+    const result = await db.update(reports)
+      .set(updateData)
+      .where(eq(reports.id, id))
+      .returning();
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteReport(id: number): Promise<boolean> {
+    const result = await db.delete(reports).where(eq(reports.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async sendReport(id: number, emailTo: string): Promise<boolean> {
+    try {
+      // Update report status to "sent"
+      const result = await db.update(reports)
+        .set({ 
+          status: "sent",
+          emailTo: emailTo,
+          updatedAt: new Date()
+        })
+        .where(eq(reports.id, id))
+        .returning();
+      
+      // In a real implementation, we would send an email here using SendGrid or similar service
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error sending report:', error);
+      return false;
+    }
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
