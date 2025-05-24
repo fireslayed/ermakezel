@@ -199,222 +199,286 @@ export default function Settings() {
   };
   
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Ayarlar</h2>
-      </div>
-      
-      <Tabs defaultValue={activeTab} className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="mb-4 flex w-full flex-wrap">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span>Kullanıcı Yönetimi</span>
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            <span>Yetki Ayarları</span>
-          </TabsTrigger>
-          <TabsTrigger value="language" className="flex items-center gap-2">
-            <Languages className="h-4 w-4" />
-            <span>Dil ve Tema</span>
-          </TabsTrigger>
-          <TabsTrigger value="mail" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            <span>Mail Ayarları</span>
-          </TabsTrigger>
-          <TabsTrigger value="backup" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            <span>Veri ve Yedekleme</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <span>Bildirim Ayarları</span>
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            <span>Güvenlik</span>
-          </TabsTrigger>
-          <TabsTrigger value="api" className="flex items-center gap-2">
-            <Link className="h-4 w-4" />
-            <span>API Ayarları</span>
-          </TabsTrigger>
-          <TabsTrigger value="about" className="flex items-center gap-2">
-            <Info className="h-4 w-4" />
-            <span>Hakkında</span>
-          </TabsTrigger>
-        </TabsList>
+    <div className="flex-1 p-0">
+      <div className="flex flex-col md:flex-row h-full">
+        {/* Yan Menü */}
+        <div className="w-full md:w-64 shrink-0 border-r bg-background">
+          <div className="p-4 border-b">
+            <h2 className="text-xl font-semibold">Ayarlar</h2>
+            <p className="text-sm text-muted-foreground mt-1">Sistem yapılandırmasını yönetin</p>
+          </div>
+          <nav className="p-2">
+            <div className="space-y-1">
+              <Button 
+                variant={activeTab === "users" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "users" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("users")}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Kullanıcı Yönetimi
+              </Button>
+              <Button 
+                variant={activeTab === "permissions" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "permissions" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("permissions")}
+              >
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Yetki Ayarları
+              </Button>
+              <Button 
+                variant={activeTab === "language" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "language" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("language")}
+              >
+                <Languages className="h-4 w-4 mr-2" />
+                Dil ve Tema
+              </Button>
+              <Button 
+                variant={activeTab === "mail" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "mail" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("mail")}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Mail Ayarları
+              </Button>
+              <Button 
+                variant={activeTab === "backup" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "backup" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("backup")}
+              >
+                <Database className="h-4 w-4 mr-2" />
+                Veri ve Yedekleme
+              </Button>
+              <Button 
+                variant={activeTab === "notifications" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "notifications" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("notifications")}
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                Bildirim Ayarları
+              </Button>
+              <Button 
+                variant={activeTab === "security" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "security" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("security")}
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                Güvenlik
+              </Button>
+              <Button 
+                variant={activeTab === "api" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "api" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("api")}
+              >
+                <Link className="h-4 w-4 mr-2" />
+                API Ayarları
+              </Button>
+              <Button 
+                variant={activeTab === "about" ? "secondary" : "ghost"} 
+                className={`w-full justify-start text-sm ${activeTab === "about" ? "font-medium" : ""}`}
+                onClick={() => setActiveTab("about")}
+              >
+                <Info className="h-4 w-4 mr-2" />
+                Hakkında
+              </Button>
+            </div>
+          </nav>
+        </div>
+        
+        {/* İçerik Alanı */}
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
+          <div className="max-w-4xl mx-auto">
+            <Tabs value={activeTab} className="w-full" onValueChange={setActiveTab}>
         
         {/* 1. Kullanıcı Yönetimi */}
         <TabsContent value="users">
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Kullanıcı Listesi</CardTitle>
-                <CardDescription>
-                  Sisteme kayıtlı tüm kullanıcıları görüntüleyin ve yönetin
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Kullanıcı Adı</TableHead>
-                      <TableHead>Ad Soyad</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead>Son Giriş</TableHead>
-                      <TableHead>Durum</TableHead>
-                      <TableHead>İşlemler</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!isUsersLoading && users && users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>{user.username}</TableCell>
-                        <TableCell>{user.fullName}</TableCell>
-                        <TableCell>{user.role || "Operatör"}</TableCell>
-                        <TableCell>{new Date().toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${user.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}`}>
-                            {user.isActive ? "Aktif" : "Pasif"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon">
-                              <RefreshCw className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Kullanıcıyı Sil</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Bu kullanıcıyı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>İptal</AlertDialogCancel>
-                                  <AlertDialogAction className="bg-red-600 hover:bg-red-700">
-                                    Sil
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+          <div>
+            <h1 className="text-2xl font-bold mb-6">Kullanıcı Yönetimi</h1>
+            <p className="text-muted-foreground mb-8">Kullanıcıların bilgilerini düzenleyin ve yeni kullanıcılar ekleyin.</p>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>Kullanıcı Ekle</CardTitle>
-                <CardDescription>
-                  Sisteme yeni bir kullanıcı ekleyin
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...userForm}>
-                  <form onSubmit={userForm.handleSubmit(createUser)} className="space-y-4">
-                    <FormField
-                      control={userForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Kullanıcı Adı</FormLabel>
-                          <FormControl>
-                            <Input placeholder="kullanici123" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={userForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Ad Soyad</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ahmet Yılmaz" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={userForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>E-posta</FormLabel>
-                          <FormControl>
-                            <Input placeholder="ahmet@sirket.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={userForm.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rol</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Rol seçin" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="root">Root</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="technician">Teknisyen</SelectItem>
-                              <SelectItem value="operator">Operatör</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={userForm.control}
-                      name="isActive"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                          <div className="space-y-0.5">
-                            <FormLabel>Aktif</FormLabel>
-                            <FormDescription>
-                              Kullanıcı aktif olarak sisteme giriş yapabilir
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full">
-                      <Plus className="mr-2 h-4 w-4" /> Kullanıcı Ekle
+            <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+              <Card className="lg:col-span-2 shadow-sm border-0 bg-card">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-lg font-medium">Kullanıcı Listesi</CardTitle>
+                      <CardDescription className="mt-1">
+                        Sisteme kayıtlı kullanıcıları yönetin
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-8 gap-1">
+                      <RefreshCw className="h-3.5 w-3.5" /> Yenile
                     </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="py-2">Kullanıcı Adı</TableHead>
+                          <TableHead>Ad Soyad</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead>Son Giriş</TableHead>
+                          <TableHead>Durum</TableHead>
+                          <TableHead>İşlemler</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {!isUsersLoading && users && users.map((user) => (
+                          <TableRow key={user.id} className="hover:bg-muted/30">
+                            <TableCell className="font-medium">{user.username}</TableCell>
+                            <TableCell>{user.fullName}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {user.role || "Operatör"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{new Date().toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Badge variant={user.isActive ? "success" : "destructive"} className="bg-opacity-10">
+                                {user.isActive ? "Aktif" : "Pasif"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Düzenle">
+                                  <FileEditIcon className="h-3.5 w-3.5" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" title="Sil">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Kullanıcıyı Sil</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Bu kullanıcıyı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>İptal</AlertDialogCancel>
+                                      <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+                                        Sil
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-sm border-0 bg-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-medium">Kullanıcı Ekle</CardTitle>
+                  <CardDescription className="mt-1">
+                    Sisteme yeni bir kullanıcı ekleyin
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...userForm}>
+                    <form onSubmit={userForm.handleSubmit(createUser)} className="space-y-4">
+                      <FormField
+                        control={userForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-medium">Kullanıcı Adı</FormLabel>
+                            <FormControl>
+                              <Input placeholder="kullanici123" className="h-9" {...field} />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={userForm.control}
+                        name="fullName"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-medium">Ad Soyad</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ahmet Yılmaz" className="h-9" {...field} />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={userForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-medium">E-posta</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ahmet@sirket.com" className="h-9" {...field} />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={userForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-medium">Rol</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Rol seçin" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="root">Root</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="technician">Teknisyen</SelectItem>
+                                <SelectItem value="operator">Operatör</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={userForm.control}
+                        name="isActive"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-6">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-sm">Aktif</FormLabel>
+                              <FormDescription className="text-xs">
+                                Kullanıcı sisteme giriş yapabilir
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" className="w-full mt-6">
+                        <Plus className="mr-2 h-4 w-4" /> Kullanıcı Ekle
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
         
