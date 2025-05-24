@@ -164,7 +164,30 @@ export function ReportForm({
           <div className="space-y-2 w-full">
             <Label htmlFor="description" className="block text-sm font-medium">Açıklama</Label>
             <div className="border rounded-md overflow-hidden w-full box-border">
-              <div className="w-full" style={{ boxSizing: 'border-box' }}>
+              <div className="w-full max-w-full" style={{ 
+                boxSizing: 'border-box',
+                overflowX: 'hidden'
+              }}>
+                <style jsx global>{`
+                  .ck-editor__editable_inline {
+                    max-height: 300px;
+                    overflow-y: auto;
+                  }
+                  .ck.ck-editor__main>.ck-editor__editable {
+                    width: 100%;
+                  }
+                  .ck.ck-toolbar {
+                    flex-wrap: wrap;
+                    width: 100% !important;
+                  }
+                  .ck.ck-editor {
+                    width: 100% !important;
+                    max-width: 100%;
+                  }
+                  .ck.ck-reset.ck-editor.ck-rounded-corners {
+                    max-width: 100%;
+                  }
+                `}</style>
                 <CKEditor
                   editor={ClassicEditor}
                   data={formData.description || ""}
@@ -173,26 +196,29 @@ export function ReportForm({
                     handleEditorChange(data);
                   }}
                   config={{
-                    toolbar: [
-                      "heading",
-                      "|",
-                      "bold",
-                      "italic",
-                      "link",
-                      "|",
-                      "bulletedList",
-                      "numberedList",
-                      "|",
-                      "outdent",
-                      "indent",
-                      "|",
-                      "blockQuote",
-                      "insertTable",
-                      "imageUpload",
-                      "|",
-                      "undo",
-                      "redo",
-                    ],
+                    toolbar: {
+                      items: [
+                        "heading",
+                        "|",
+                        "bold",
+                        "italic",
+                        "link",
+                        "|",
+                        "bulletedList",
+                        "numberedList",
+                        "|",
+                        "outdent",
+                        "indent",
+                        "|",
+                        "blockQuote",
+                        "insertTable",
+                        "imageUpload",
+                        "|",
+                        "undo",
+                        "redo",
+                      ],
+                      shouldNotGroupWhenFull: true
+                    },
                     language: "tr",
                     placeholder:
                       "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)",
