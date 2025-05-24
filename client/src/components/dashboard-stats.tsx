@@ -27,31 +27,31 @@ export function DashboardStats() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="Total Tasks"
+        title="Aktif Görevler"
         value={stats?.total || 0}
-        description="All tasks"
+        description="Toplam görev sayısı"
         icon={<ListTodo className="h-6 w-6 text-blue-500" />}
         color="blue"
       />
       <StatCard
-        title="Completed"
+        title="Tamamlanan"
         value={stats?.completed || 0}
-        description={`${completionRate}% completion rate`}
+        description={`${completionRate}% tamamlanma oranı`}
         icon={<CheckCircle className="h-6 w-6 text-green-500" />}
         color="green"
         progress={completionRate}
       />
       <StatCard
-        title="Pending"
+        title="Bekleyen"
         value={stats?.pending || 0}
-        description="Tasks in progress"
+        description="Devam eden görevler"
         icon={<Clock className="h-6 w-6 text-yellow-500" />}
         color="yellow"
       />
       <StatCard
-        title="Overdue"
+        title="Gecikmiş"
         value={stats?.overdue || 0}
-        description="Past due date"
+        description="Son tarihi geçmiş görevler"
         icon={<AlertTriangle className="h-6 w-6 text-red-500" />}
         color="red"
       />
