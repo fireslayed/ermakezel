@@ -175,7 +175,7 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
               <SelectValue placeholder="Proje seçin (opsiyonel)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Proje Yok</SelectItem>
+              <SelectItem value="0">Proje Yok</SelectItem>
               {projects.map(project => (
                 <SelectItem key={project.id} value={project.id.toString()}>{project.name}</SelectItem>
               ))}
