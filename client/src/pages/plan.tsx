@@ -1116,7 +1116,7 @@ export default function Plan() {
                     >
                       <Plus className="h-5 w-5" />
                       
-                      {/* Ses dalgası animasyonu - profesyonel görünüm */}
+                      {/* Ses dalgası animasyonu - gelişmiş ve gösterişli animasyon */}
                       {(point.hasNotes || point.hasImages) && (
                         <>
                           {point.hasNotes && point.hasImages ? (
@@ -1125,6 +1125,9 @@ export default function Plan() {
                               <span className="absolute w-8 h-8 bg-gray-700 rounded-full animate-ping opacity-70"></span>
                               <span className="absolute w-12 h-12 border-2 border-gray-600 rounded-full animate-pulse opacity-50"></span>
                               <span className="absolute w-16 h-16 border border-gray-500 rounded-full animate-pulse opacity-30"></span>
+                              <span className="absolute w-20 h-20 border-dotted border-2 border-gray-400 rounded-full animate-spin opacity-20"></span>
+                              <span className="absolute w-24 h-24 border border-gray-400 rounded-full animate-pulse opacity-10"></span>
+                              <div className="absolute inset-0 animate-pulse shadow-lg shadow-gray-600/50 rounded-full"></div>
                             </>
                           ) : point.hasNotes ? (
                             // Sarı animasyon - Sadece Not
@@ -1132,6 +1135,9 @@ export default function Plan() {
                               <span className="absolute w-8 h-8 bg-yellow-400 rounded-full animate-ping opacity-70"></span>
                               <span className="absolute w-12 h-12 border-2 border-yellow-400 rounded-full animate-pulse opacity-50"></span>
                               <span className="absolute w-16 h-16 border border-yellow-300 rounded-full animate-pulse opacity-30"></span>
+                              <span className="absolute w-20 h-20 border-dotted border-2 border-yellow-300 rounded-full animate-spin opacity-20"></span>
+                              <span className="absolute w-24 h-24 border border-yellow-200 rounded-full animate-pulse opacity-10"></span>
+                              <div className="absolute inset-0 animate-pulse shadow-lg shadow-yellow-500/50 rounded-full"></div>
                             </>
                           ) : (
                             // Kırmızı animasyon - Sadece Resim
@@ -1139,6 +1145,9 @@ export default function Plan() {
                               <span className="absolute w-8 h-8 bg-red-400 rounded-full animate-ping opacity-70"></span>
                               <span className="absolute w-12 h-12 border-2 border-red-400 rounded-full animate-pulse opacity-50"></span>
                               <span className="absolute w-16 h-16 border border-red-300 rounded-full animate-pulse opacity-30"></span>
+                              <span className="absolute w-20 h-20 border-dotted border-2 border-red-300 rounded-full animate-spin opacity-20"></span>
+                              <span className="absolute w-24 h-24 border border-red-200 rounded-full animate-pulse opacity-10"></span>
+                              <div className="absolute inset-0 animate-pulse shadow-lg shadow-red-500/50 rounded-full"></div>
                             </>
                           )}
                         </>
