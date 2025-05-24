@@ -314,6 +314,7 @@ export const insertLocationReportSchema = createInsertSchema(locationReports).om
 }).extend({
   gpsLat: z.number().nullable(),
   gpsLong: z.number().nullable(),
+  reportDate: z.string().transform(str => new Date(str)), // String'i Date'e dönüştür
 });
 
 export type LocationReport = typeof locationReports.$inferSelect;

@@ -291,7 +291,7 @@ export default function LocationReportPage() {
         description,
         gpsLat,
         gpsLong,
-        reportDate: new Date()
+        reportDate: new Date().toISOString() // ISO string formatında gönder
       });
     }
   };
