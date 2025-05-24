@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Move, Image, X, Layers } from "lucide-react";
+import { Plus, Move, Image, X, Layers, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +47,164 @@ interface BackgroundImage {
   height: number;
 }
 
+// Parça Seçici Bileşeni
+interface PartsSelectorProps {
+  selectedPoint: PlanPoint | null;
+  setPoints: React.Dispatch<React.SetStateAction<PlanPoint[]>>;
+  points: PlanPoint[];
+  setSelectedPoint: React.Dispatch<React.SetStateAction<PlanPoint | null>>;
+}
+
+function PartsSelector({ selectedPoint, setPoints, points, setSelectedPoint }: PartsSelectorProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedParts, setSelectedParts] = useState<string[]>([]);
+  const { toast } = useToast();
+  
+  // Parçaları getir
+  const { data: parts, isLoading } = useQuery({
+    queryKey: ['/api/parts'],
+    retry: 1,
+  });
+  
+  // Filtreleme fonksiyonu
+  const filteredParts = Array.isArray(parts) ? parts.filter(part => {
+    const query = searchQuery.toLowerCase();
+    return (
+      part.name?.toLowerCase().includes(query) || 
+      part.partNumber?.toLowerCase().includes(query)
+    );
+  }) : [];
+  
+  // Parça ekle
+  const handleAddPartToPoint = () => {
+    if (!selectedPoint) return;
+    
+    // Seçili parçaları al
+    const partsToAdd = selectedParts.map(partId => {
+      const part = filteredParts.find(p => p.id.toString() === partId);
+      return part;
+    }).filter(Boolean);
+    
+    if (partsToAdd.length === 0) {
+      toast({
+        title: "Seçim Yapılmadı",
+        description: "Lütfen en az bir parça seçin",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Mevcut noktaya parçaları ekle (notes dizisine)
+    const updatedPoints = points.map(point => {
+      if (point.id === selectedPoint.id) {
+        // Parça bilgilerini not olarak ekle
+        const partNotes = partsToAdd.map(part => (
+          `[PARÇA] ${part.name} (${part.partNumber})` +
+          `${part.category ? ` - Kategori: ${part.category}` : ''}` +
+          `${part.color ? ` - Renk: ${part.color}` : ''}`
+        ));
+        
+        return {
+          ...point,
+          notes: [...point.notes, ...partNotes],
+          hasNotes: true
+        };
+      }
+      return point;
+    });
+    
+    setPoints(updatedPoints);
+    
+    // Seçili noktayı güncelle
+    const updatedPoint = updatedPoints.find(p => p.id === selectedPoint.id);
+    if (updatedPoint) setSelectedPoint(updatedPoint);
+    
+    // Seçilmiş parçaları temizle
+    setSelectedParts([]);
+    
+    toast({
+      title: "Parçalar Eklendi",
+      description: `${partsToAdd.length} parça başarıyla noktaya eklendi`,
+    });
+  };
+  
+  // Parça seçme işlevi
+  const togglePartSelection = (partId: string) => {
+    setSelectedParts(prev => {
+      if (prev.includes(partId)) {
+        return prev.filter(id => id !== partId);
+      } else {
+        return [...prev, partId];
+      }
+    });
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Parça adı veya numarası ile ara"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Button 
+          onClick={handleAddPartToPoint}
+          disabled={selectedParts.length === 0}
+        >
+          Ekle
+        </Button>
+      </div>
+      
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <p>Parçalar yükleniyor...</p>
+        </div>
+      ) : filteredParts.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          {searchQuery ? (
+            <p>"{searchQuery}" ile eşleşen parça bulunamadı</p>
+          ) : (
+            <p>Henüz hiç parça eklenmemiş. Parçalar sayfasından yeni parça ekleyebilirsiniz.</p>
+          )}
+        </div>
+      ) : (
+        <ScrollArea className="h-[320px] rounded-md border p-2">
+          <div className="space-y-2">
+            {filteredParts.map(part => (
+              <div 
+                key={part.id} 
+                className={`p-3 rounded-md cursor-pointer transition-colors ${
+                  selectedParts.includes(part.id.toString()) 
+                    ? 'bg-primary/20 border border-primary/50' 
+                    : 'hover:bg-accent border border-transparent'
+                }`}
+                onClick={() => togglePartSelection(part.id.toString())}
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <h4 className="font-medium">{part.name}</h4>
+                    <p className="text-sm text-muted-foreground">{part.partNumber}</p>
+                  </div>
+                  <Badge variant="outline">{part.category || 'Diğer'}</Badge>
+                </div>
+                {part.description && (
+                  <div className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                    {part.description.replace(/<[^>]*>/g, ' ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+  );
+}
+
 export default function Plan() {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -58,6 +219,89 @@ export default function Plan() {
   const [imageHeight, setImageHeight] = useState<number>(400);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
+  
+  // Parça seçimi için değişkenler
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedParts, setSelectedParts] = useState<string[]>([]);
+  
+  // Parçaları getir
+  const { data: parts, isLoading: isLoadingParts } = useQuery({
+    queryKey: ['/api/parts'],
+    retry: 1,
+  });
+  
+  // Filtreleme fonksiyonu
+  const filteredParts = Array.isArray(parts) ? parts.filter(part => {
+    const query = searchQuery.toLowerCase();
+    return (
+      part.name?.toLowerCase().includes(query) || 
+      part.partNumber?.toLowerCase().includes(query)
+    );
+  }) : [];
+  
+  // Parça seçme işlevi
+  const togglePartSelection = (partId: string) => {
+    setSelectedParts(prev => {
+      if (prev.includes(partId)) {
+        return prev.filter(id => id !== partId);
+      } else {
+        return [...prev, partId];
+      }
+    });
+  };
+  
+  // Parça ekle
+  const handleAddPartToPoint = () => {
+    if (!selectedPoint) return;
+    
+    // Seçili parçaları al
+    const partsToAdd = selectedParts.map(partId => {
+      const part = filteredParts.find(p => p.id.toString() === partId);
+      return part;
+    }).filter(Boolean);
+    
+    if (partsToAdd.length === 0) {
+      toast({
+        title: "Seçim Yapılmadı",
+        description: "Lütfen en az bir parça seçin",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Mevcut noktaya parçaları ekle (notes dizisine)
+    const updatedPoints = points.map(point => {
+      if (point.id === selectedPoint.id) {
+        // Parça bilgilerini not olarak ekle
+        const partNotes = partsToAdd.map(part => (
+          `[PARÇA] ${part.name} (${part.partNumber})` +
+          `${part.category ? ` - Kategori: ${part.category}` : ''}` +
+          `${part.color ? ` - Renk: ${part.color}` : ''}`
+        ));
+        
+        return {
+          ...point,
+          notes: [...point.notes, ...partNotes],
+          hasNotes: true
+        };
+      }
+      return point;
+    });
+    
+    setPoints(updatedPoints);
+    
+    // Seçili noktayı güncelle
+    const updatedPoint = updatedPoints.find(p => p.id === selectedPoint.id);
+    if (updatedPoint) setSelectedPoint(updatedPoint);
+    
+    // Seçilmiş parçaları temizle
+    setSelectedParts([]);
+    
+    toast({
+      title: "Parçalar Eklendi",
+      description: `${partsToAdd.length} parça başarıyla noktaya eklendi`,
+    });
+  };
 
   // Handle toggle buttons
   const handleToggleChange = (value: string) => {
@@ -620,9 +864,10 @@ export default function Plan() {
           </DialogHeader>
           
           <Tabs defaultValue="notes" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="images">Images</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="notes">Notlar</TabsTrigger>
+              <TabsTrigger value="images">Resimler</TabsTrigger>
+              <TabsTrigger value="parts">Parçalar</TabsTrigger>
             </TabsList>
             
             <TabsContent value="notes" className="space-y-4 pt-4">
@@ -695,10 +940,75 @@ export default function Plan() {
                 <p className="text-sm text-muted-foreground">No images uploaded yet</p>
               )}
             </TabsContent>
+            
+            <TabsContent value="parts" className="space-y-4 pt-4">
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Parça adı veya numarası ile ara"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleAddPartToPoint}
+                    disabled={selectedParts.length === 0}
+                  >
+                    Ekle
+                  </Button>
+                </div>
+                
+                {isLoadingParts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <p>Parçalar yükleniyor...</p>
+                  </div>
+                ) : Array.isArray(parts) && parts.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Henüz hiç parça eklenmemiş. Parçalar sayfasından yeni parça ekleyebilirsiniz.</p>
+                  </div>
+                ) : filteredParts.length === 0 && searchQuery ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>"{searchQuery}" ile eşleşen parça bulunamadı</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[320px] rounded-md border p-2">
+                    <div className="space-y-2">
+                      {filteredParts.map((part: any) => (
+                        <div 
+                          key={part.id} 
+                          className={`p-3 rounded-md cursor-pointer transition-colors ${
+                            selectedParts.includes(part.id.toString()) 
+                              ? 'bg-primary/20 border border-primary/50' 
+                              : 'hover:bg-accent border border-transparent'
+                          }`}
+                          onClick={() => togglePartSelection(part.id.toString())}
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <h4 className="font-medium">{part.name}</h4>
+                              <p className="text-sm text-muted-foreground">{part.partNumber}</p>
+                            </div>
+                            <Badge variant="outline">{part.category || 'Diğer'}</Badge>
+                          </div>
+                          {part.description && (
+                            <div className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                              {part.description.replace(/<[^>]*>/g, ' ')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            </TabsContent>
           </Tabs>
           
           <DialogFooter>
-            <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
+            <Button onClick={() => setIsDialogOpen(false)}>Kapat</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
