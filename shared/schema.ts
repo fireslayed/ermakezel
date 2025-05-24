@@ -240,3 +240,46 @@ export type PlanUser = typeof planUsers.$inferSelect;
 export type InsertPlanUser = z.infer<typeof insertPlanUserSchema>;
 export type TaskAssignment = typeof taskAssignments.$inferSelect;
 export type InsertTaskAssignment = z.infer<typeof insertTaskAssignmentSchema>;
+
+// Hatırlatıcılar tablosu
+export const reminders = pgTable("reminders", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  reminderDate: timestamp("reminder_date").notNull(),
+  reminderType: varchar("reminder_type", { length: 50 }).notNull().default("email"), // email, notification, sms
+  message: text("message"),
+  sent: boolean("sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertReminderSchema = createInsertSchema(reminders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Reminder = typeof reminders.$inferSelect;
+export type InsertReminder = z.infer<typeof insertReminderSchema>;
+
+// Kullanıcı bildirimleri tablosu
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).notNull().default("info"), // info, warning, error, success
+  isRead: boolean("is_read").default(false),
+  relatedTaskId: integer("related_task_id").references(() => tasks.id),
+  relatedPlanId: integer("related_plan_id").references(() => plans.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;

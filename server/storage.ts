@@ -1,5 +1,6 @@
 import { 
-  users, tasks, projects, reports, parts, plans, planUsers, taskAssignments,
+  users, tasks, projects, reports, parts, plans, planUsers, taskAssignments, 
+  reminders, notifications,
   type User, type InsertUser,
   type Task, type InsertTask,
   type Project, type InsertProject,
@@ -7,7 +8,9 @@ import {
   type Part, type InsertPart,
   type Plan, type InsertPlan,
   type PlanUser, type InsertPlanUser,
-  type TaskAssignment, type InsertTaskAssignment
+  type TaskAssignment, type InsertTaskAssignment,
+  type Reminder, type InsertReminder,
+  type Notification, type InsertNotification
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sql } from "drizzle-orm";
@@ -70,6 +73,24 @@ export interface IStorage {
   updateTaskAssignmentStatus(taskId: number, userId: number, status: string, notes?: string): Promise<TaskAssignment | undefined>;
   getTaskAssignments(taskId: number): Promise<TaskAssignment[]>;
   getTaskAssignedUsers(taskId: number): Promise<User[]>;
+  
+  // Reminder operations (Yeni)
+  createReminder(reminder: InsertReminder): Promise<Reminder>;
+  getReminders(userId: number): Promise<Reminder[]>;
+  getTaskReminders(taskId: number): Promise<Reminder[]>;
+  getOverdueReminders(): Promise<Reminder[]>;
+  updateReminder(id: number, reminder: Partial<InsertReminder>): Promise<Reminder | undefined>;
+  deleteReminder(id: number): Promise<boolean>;
+  markReminderAsSent(id: number): Promise<Reminder | undefined>;
+  
+  // Notification operations (Yeni)
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getUserUnreadNotifications(userId: number): Promise<Notification[]>;
+  getNotification(id: number): Promise<Notification | undefined>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  deleteNotification(id: number): Promise<boolean>;
   
   // Dashboard stats
   getTaskStats(userId: number): Promise<{
@@ -657,6 +678,150 @@ export class DatabaseStorage implements IStorage {
     return users.filter(user => user !== undefined) as User[];
   }
 
+  // Reminder operations
+  async createReminder(insertReminder: InsertReminder): Promise<Reminder> {
+    const [reminder] = await db
+      .insert(reminders)
+      .values(insertReminder)
+      .returning();
+    return reminder;
+  }
+  
+  async getReminders(userId: number): Promise<Reminder[]> {
+    return await db
+      .select()
+      .from(reminders)
+      .where(eq(reminders.userId, userId));
+  }
+  
+  async getTaskReminders(taskId: number): Promise<Reminder[]> {
+    return await db
+      .select()
+      .from(reminders)
+      .where(eq(reminders.taskId, taskId));
+  }
+  
+  async getOverdueReminders(): Promise<Reminder[]> {
+    // Gönderilmemiş ve tarihi geçmiş hatırlatıcıları getir
+    return await db
+      .select()
+      .from(reminders)
+      .where(
+        and(
+          eq(reminders.sent, false),
+          sql`${reminders.reminderDate} <= NOW()`
+        )
+      );
+  }
+  
+  async updateReminder(id: number, reminderUpdate: Partial<InsertReminder>): Promise<Reminder | undefined> {
+    const [updated] = await db
+      .update(reminders)
+      .set({
+        ...reminderUpdate,
+        updatedAt: new Date()
+      })
+      .where(eq(reminders.id, id))
+      .returning();
+    
+    return updated;
+  }
+  
+  async deleteReminder(id: number): Promise<boolean> {
+    const result = await db
+      .delete(reminders)
+      .where(eq(reminders.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
+  async markReminderAsSent(id: number): Promise<Reminder | undefined> {
+    const [updated] = await db
+      .update(reminders)
+      .set({ 
+        sent: true,
+        updatedAt: new Date()
+      })
+      .where(eq(reminders.id, id))
+      .returning();
+    
+    return updated;
+  }
+  
+  // Notification operations
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values(insertNotification)
+      .returning();
+    
+    return notification;
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(sql`${notifications.createdAt} DESC`);
+  }
+  
+  async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      )
+      .orderBy(sql`${notifications.createdAt} DESC`);
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const result = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.id, id));
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const [updated] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return updated;
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        )
+      );
+    
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    const result = await db
+      .delete(notifications)
+      .where(eq(notifications.id, id))
+      .returning();
+    
+    return result.length > 0;
+  }
+  
   // Initialize demo data if needed
   async initializeDemoData(): Promise<void> {
     // Check if users table is empty
