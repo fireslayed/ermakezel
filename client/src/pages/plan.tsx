@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, Move, Image, X, Layers, Search, Save, Trash2, FilePlus } from "lucide-react";
+import { Plus, Move, Image, X, Layers, Search, Save, Trash2, FilePlus, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,7 @@ interface PlanPoint {
   images: string[];
   hasNotes: boolean;
   hasImages: boolean;
+  color?: string; // Nokta rengi
 }
 
 interface BackgroundImageLayer {
@@ -219,6 +220,7 @@ export default function Plan() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [points, setPoints] = useState<PlanPoint[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<PlanPoint | null>(null);
@@ -229,6 +231,18 @@ export default function Plan() {
   const [imageHeight, setImageHeight] = useState<number>(400);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showLayersPanel, setShowLayersPanel] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [pointColor, setPointColor] = useState<string>("green");
+  
+  // Kullanılabilir renk seçenekleri
+  const colorOptions = [
+    { value: "green", label: "Yeşil", class: "bg-green-600" },
+    { value: "red", label: "Kırmızı", class: "bg-red-600" },
+    { value: "blue", label: "Mavi", class: "bg-blue-600" },
+    { value: "yellow", label: "Sarı", class: "bg-yellow-600" },
+    { value: "purple", label: "Mor", class: "bg-purple-600" },
+    { value: "pink", label: "Pembe", class: "bg-pink-600" },
+  ];
   
   // Arkaplan görüntü katmanları için değişkenler
   const [backgroundImageLayers, setBackgroundImageLayers] = useState<BackgroundImageLayer[]>([]);
@@ -476,6 +490,35 @@ export default function Plan() {
   const handleToggleChange = (value: string) => {
     setActiveTool(activeTool === value ? null : value);
   };
+  
+  // Tam sayfa görünümü
+  const toggleFullscreen = () => {
+    if (!cardRef.current) return;
+    
+    if (!isFullscreen) {
+      if (cardRef.current.requestFullscreen) {
+        cardRef.current.requestFullscreen();
+      }
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+      setIsFullscreen(false);
+    }
+  };
+  
+  // Fullscreen değişikliklerini izle
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // Handle canvas click for adding plus markers
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -964,27 +1007,38 @@ export default function Plan() {
       
       <div className="grid grid-cols-1 md:grid-cols-[1fr_250px] gap-4">
         <div className="order-2 md:order-1">
-          <Card>
+          <Card ref={cardRef} className={isFullscreen ? "h-screen w-screen flex flex-col" : ""}>
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
                 <CardTitle>Plan Görünümü</CardTitle>
-                <ToggleGroup type="single" value={activeTool} onValueChange={handleToggleChange}>
-                  <ToggleGroupItem value="add-point" aria-label="Add Point">
-                    <Plus className="h-4 w-4" />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="move" aria-label="Move">
-                    <Move className="h-4 w-4" />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="resize-image" aria-label="Resize Image">
-                    <Image className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                <div className="flex items-center gap-2">
+                  <ToggleGroup type="single" value={activeTool} onValueChange={handleToggleChange}>
+                    <ToggleGroupItem value="add-point" aria-label="Nokta Ekle" title="Nokta Ekle">
+                      <Plus className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="move" aria-label="Taşı" title="Taşı">
+                      <Move className="h-4 w-4" />
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="resize-image" aria-label="Boyutlandır" title="Boyutlandır">
+                      <Image className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? "Tam ekrandan çık" : "Tam ekran"}
+                  >
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className={isFullscreen ? "flex-grow" : ""}>
               <div
                 ref={canvasRef}
-                className="bg-secondary/30 relative w-full min-h-[500px] rounded-md overflow-hidden"
+                className={`bg-secondary/30 relative w-full rounded-md overflow-hidden ${isFullscreen ? "h-full" : "min-h-[500px]"}`}
                 onClick={handleCanvasClick}
                 style={{ cursor: activeTool === "add-point" ? "crosshair" : "default" }}
               >
@@ -1027,14 +1081,30 @@ export default function Plan() {
                 {points.map((point) => (
                   <div
                     key={point.id}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-20 ${
-                      point.hasNotes || point.hasImages ? "animate-pulse" : ""
-                    }`}
+                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-20`}
                     style={{ left: point.x, top: point.y }}
                     onClick={(e) => handlePointClick(point, e)}
                   >
-                    <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-primary/90">
+                    <div 
+                      className={`
+                        rounded-full w-8 h-8 flex items-center justify-center cursor-pointer 
+                        transition-all duration-300 relative
+                        ${point.hasNotes || point.hasImages 
+                          ? "bg-green-600 text-white shadow-lg" 
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                        }
+                      `}
+                    >
                       <Plus className="h-5 w-5" />
+                      
+                      {/* Ses dalgası animasyonu */}
+                      {(point.hasNotes || point.hasImages) && (
+                        <>
+                          <span className="absolute w-8 h-8 bg-green-400 rounded-full animate-ping opacity-75"></span>
+                          <span className="absolute w-12 h-12 border-2 border-green-400 rounded-full animate-pulse opacity-50"></span>
+                          <span className="absolute w-16 h-16 border border-green-300 rounded-full animate-pulse opacity-30"></span>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
