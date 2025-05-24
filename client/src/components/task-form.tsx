@@ -60,7 +60,7 @@ export function TaskForm({
   onSuccess, 
   defaultValues,
   taskId,
-  buttonLabel = "Add Task",
+  buttonLabel = "Görev Ekle",
   triggerButton
 }: TaskFormProps) {
   const { toast } = useToast();
@@ -157,9 +157,9 @@ export function TaskForm({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Task" : "Create a new task"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Görevi Düzenle" : "Yeni görev oluştur"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Update task details below" : "Fill in the details for your new task"}
+            {isEditing ? "Görev detaylarını aşağıdan güncelleyin" : "Yeni göreviniz için detayları doldurun"}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -169,9 +169,9 @@ export function TaskForm({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Başlık</FormLabel>
                   <FormControl>
-                    <Input placeholder="Task title" {...field} />
+                    <Input placeholder="Görev başlığı" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
