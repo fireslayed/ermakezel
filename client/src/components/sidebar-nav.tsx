@@ -88,7 +88,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
         <div className="px-4 py-2">
           <div className="flex items-center mb-8">
             <Sparkles className="h-6 w-6 text-primary mr-2" />
-            <h2 className="text-lg font-semibold tracking-tight">ErmakPoint Beta v2</h2>
+            <h2 className="text-lg font-semibold tracking-tight">ErmakPlan Beta v2</h2>
           </div>
           
           <div className="mb-8 flex items-center gap-2">
