@@ -736,17 +736,17 @@ export default function LocationReportPage() {
                                 <p className="text-sm">{report.description}</p>
                               )}
                               
-                              {report.gpsLat && report.gpsLong && (
+                              {report.gpsLat !== null && report.gpsLong !== null && (
                                 <div className="flex items-center justify-between mt-1">
                                   <span className={`text-xs ${isCurrentUser ? 'text-blue-100' : 'text-muted-foreground'}`}>
-                                    GPS: {report.gpsLat.toFixed(6)}, {report.gpsLong.toFixed(6)}
+                                    GPS: {report.gpsLat !== null ? Number(report.gpsLat).toFixed(6) : "N/A"}, {report.gpsLong !== null ? Number(report.gpsLong).toFixed(6) : "N/A"}
                                   </span>
                                   
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <a 
-                                          href={getMapUrl(report.gpsLat, report.gpsLong)} 
+                                          href={report.gpsLat !== null && report.gpsLong !== null ? getMapUrl(Number(report.gpsLat), Number(report.gpsLong)) : "#"} 
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           className={`p-1 rounded hover:bg-black/10 ${isCurrentUser ? 'text-white' : ''}`}
