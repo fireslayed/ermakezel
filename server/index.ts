@@ -66,8 +66,8 @@ app.use((req, res, next) => {
   }
 
   // Set a custom port
-  const port = 4000; // Use port 4000 instead
-  server.listen(port, 'localhost', () => { 
+  const port = process.env.PORT || 3000;
+  server.listen(port, () => { 
     log(`serving on port ${port}`);
   });
 })();

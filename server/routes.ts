@@ -36,20 +36,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post('/api/auth/login', async (req, res) => {
     try {
+      console.log('Login attempt:', req.body);
       const credentials = loginSchema.parse(req.body);
+      console.log('Parsed credentials:', credentials);
+      
       const user = await storage.getUserByUsername(credentials.username);
+      console.log('User found:', user ? 'Yes' : 'No');
       
       if (!user || user.password !== credentials.password) {
+        console.log('Password check failed');
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
       // Set user ID in session
       req.session.userId = user.id;
+      console.log('Session set with userId:', user.id);
       
       // Return user info without password
       const { password, ...userInfo } = user;
       res.json(userInfo);
     } catch (error) {
+      console.error('Login error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Validation error', errors: error.errors });
       }
