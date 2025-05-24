@@ -83,21 +83,86 @@ export class DatabaseStorage implements IStorage {
 
   async sendReport(id: number, emailTo: string): Promise<boolean> {
     try {
-      // Update report status to "sent"
-      const result = await db.update(reports)
-        .set({ 
-          status: "sent",
-          emailTo: emailTo,
-          updatedAt: new Date()
-        })
-        .where(eq(reports.id, id))
-        .returning();
+      // Önce rapor bilgilerini getir
+      const report = await this.getReport(id);
+      if (!report) {
+        console.error('Rapor bulunamadı:', id);
+        return false;
+      }
       
-      // In a real implementation, we would send an email here using SendGrid or similar service
+      // E-posta modülünü import et
+      const { sendEmail } = await import('./email');
       
-      return result.length > 0;
+      // Proje bilgisini al (varsa)
+      let projectName = "";
+      if (report.projectId) {
+        const project = await db.select().from(projects).where(eq(projects.id, report.projectId));
+        if (project.length > 0) {
+          projectName = project[0].name;
+        }
+      }
+      
+      // Rapor türünü belirle
+      const reportTypes: Record<string, string> = {
+        "daily": "Günlük Rapor",
+        "installation": "Kurulum Raporu",
+        "maintenance": "Bakım Raporu",
+        "inspection": "Denetim Raporu",
+        "incident": "Olay Raporu",
+        "production": "Üretim Raporu"
+      };
+      
+      const reportTypeName = reportTypes[report.reportType || 'daily'] || 'Rapor';
+      
+      // HTML içeriği oluştur
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #3b82f6; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;">${report.title}</h2>
+          
+          <div style="margin: 20px 0;">
+            <p><strong>Rapor Türü:</strong> ${reportTypeName}</p>
+            ${projectName ? `<p><strong>Proje:</strong> ${projectName}</p>` : ''}
+            ${report.location ? `<p><strong>Konum:</strong> ${report.location}</p>` : ''}
+            <p><strong>Tarih:</strong> ${new Date(report.createdAt).toLocaleDateString('tr-TR')}</p>
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #4b5563;">Açıklama</h3>
+            <p style="white-space: pre-line;">${report.description || 'Açıklama bulunmuyor.'}</p>
+          </div>
+          
+          <div style="font-size: 12px; color: #6b7280; margin-top: 30px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
+            <p>Bu e-posta ErmakPlan Beta v2 uygulaması tarafından gönderilmiştir.</p>
+          </div>
+        </div>
+      `;
+      
+      // E-posta gönder
+      const emailSent = await sendEmail({
+        to: emailTo,
+        subject: `[ErmakPlan] ${report.title}`,
+        html: htmlContent,
+        text: `${report.title}\n\nRapor Türü: ${reportTypeName}\n${projectName ? `Proje: ${projectName}\n` : ''}${report.location ? `Konum: ${report.location}\n` : ''}Tarih: ${new Date(report.createdAt).toLocaleDateString('tr-TR')}\n\nAçıklama:\n${report.description || 'Açıklama bulunmuyor.'}\n\n---\nBu e-posta ErmakPlan Beta v2 uygulaması tarafından gönderilmiştir.`,
+      });
+      
+      if (emailSent) {
+        // Rapor durumunu güncelle
+        const result = await db.update(reports)
+          .set({ 
+            status: "sent",
+            emailTo: emailTo,
+            updatedAt: new Date()
+          })
+          .where(eq(reports.id, id))
+          .returning();
+        
+        return result.length > 0;
+      } else {
+        console.error('E-posta gönderilemedi');
+        return false;
+      }
     } catch (error) {
-      console.error('Error sending report:', error);
+      console.error('Rapor gönderirken hata oluştu:', error);
       return false;
     }
   }
