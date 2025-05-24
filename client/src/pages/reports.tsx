@@ -104,14 +104,15 @@ interface ReportFormProps {
 }
 
 function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportFormProps) {
+  const [previewMode, setPreviewMode] = useState(false);
   const [formData, setFormData] = useState({
     title: defaultValues?.title || "",
     location: defaultValues?.location || "",
     description: defaultValues?.description || "",
-    status: defaultValues?.status || "draft",
     projectId: defaultValues?.projectId?.toString() || "",
     reportType: defaultValues?.reportType || "daily",
     files: defaultValues?.files || [],
+    reportDate: defaultValues?.reportDate || format(new Date(), "yyyy-MM-dd"),
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -150,6 +151,19 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
           value={formData.title}
           onChange={handleChange}
           placeholder="Rapor başlığını girin"
+          required
+        />
+      </div>
+      
+      {/* Rapor tarihi */}
+      <div className="space-y-2">
+        <Label htmlFor="reportDate">Rapor Tarihi</Label>
+        <Input
+          id="reportDate"
+          name="reportDate"
+          type="date"
+          value={formData.reportDate}
+          onChange={handleChange}
           required
         />
       </div>
@@ -213,30 +227,90 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
               handleEditorChange(data);
             }}
             config={{
-              toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'blockQuote', 'insertTable', 'undo', 'redo'],
+              toolbar: [
+                'heading', '|', 
+                'bold', 'italic', 'link', '|',
+                'bulletedList', 'numberedList', '|',
+                'outdent', 'indent', '|',
+                'blockQuote', 'insertTable', 'imageUpload', '|',
+                'undo', 'redo'
+              ],
               language: 'tr',
-              placeholder: "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)"
+              placeholder: "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)",
+              image: {
+                toolbar: [
+                  'imageTextAlternative',
+                  'imageStyle:inline',
+                  'imageStyle:block',
+                  'imageStyle:side'
+                ]
+              }
             }}
           />
         </div>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="status">Durum</Label>
-        <Select 
-          value={formData.status} 
-          onValueChange={(value) => handleSelectChange("status", value)}
+      {/* Önizleme ve Yazdırma Butonları */}
+      <div className="flex space-x-4 mt-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex items-center gap-2"
+          onClick={() => setPreviewMode(!previewMode)}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Rapor durumunu seçin" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="draft">Taslak</SelectItem>
-            <SelectItem value="pending">İşlemde</SelectItem>
-            <SelectItem value="sent">Gönderildi</SelectItem>
-          </SelectContent>
-        </Select>
+          <span role="img" aria-label="Önizleme">🔍</span> 
+          {previewMode ? "Düzenlemeye Dön" : "Raporu Önizle"}
+        </Button>
+        
+        {previewMode && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => {
+              const printWindow = window.open('', '_blank');
+              if (printWindow) {
+                printWindow.document.write(`
+                  <html>
+                    <head>
+                      <title>${formData.title || 'Rapor'}</title>
+                      <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { font-size: 24px; margin-bottom: 10px; }
+                        .report-date { color: #666; margin-bottom: 20px; }
+                        .report-content { line-height: 1.5; }
+                      </style>
+                    </head>
+                    <body>
+                      <h1>${formData.title || 'Rapor'}</h1>
+                      <div class="report-date">Tarih: ${formData.reportDate}</div>
+                      <div class="report-content">${formData.description || ''}</div>
+                    </body>
+                  </html>
+                `);
+                printWindow.document.close();
+                printWindow.print();
+              }
+            }}
+          >
+            <span role="img" aria-label="Yazdır">🖨️</span> Yazdır
+          </Button>
+        )}
       </div>
+      
+      {/* Önizleme Paneli */}
+      {previewMode && (
+        <div className="mt-4 p-4 border rounded-md bg-white">
+          <h3 className="text-lg font-medium mb-2">{formData.title || 'Rapor'}</h3>
+          <div className="text-sm text-gray-500 mb-4">Tarih: {formData.reportDate}</div>
+          <div 
+            className="prose prose-sm max-w-none" 
+            dangerouslySetInnerHTML={{ __html: formData.description || '' }}
+          />
+        </div>
+      )}
+      
+
       
       {/* Dosya yükleme (ileri versiyonlarda eklenecek) */}
       <div className="space-y-2">
