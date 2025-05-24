@@ -2,6 +2,8 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +32,16 @@ interface ReportFormProps {
   isSubmitting: boolean;
 }
 
+// Rapor doğrulama şeması
+const reportSchema = z.object({
+  title: z.string().min(3, "Başlık en az 3 karakter olmalıdır"),
+  location: z.string().min(2, "Konum en az 2 karakter olmalıdır"),
+  description: z.string().min(10, "Açıklama en az 10 karakter olmalıdır"),
+  projectId: z.string().optional(),
+  reportType: z.string(),
+  reportDate: z.string(),
+});
+
 export function ReportForm({
   defaultValues,
   onSubmit,
@@ -37,6 +49,7 @@ export function ReportForm({
   isSubmitting,
 }: ReportFormProps) {
   const [previewMode, setPreviewMode] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     title: defaultValues?.title || "",
     location: defaultValues?.location || "",
@@ -64,14 +77,37 @@ export function ReportForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Verileri düzenle (projectId için number dönüşümü yapılıyor)
-    const submissionData = {
-      ...formData,
-      projectId: formData.projectId ? parseInt(formData.projectId) : null,
-    };
-
-    onSubmit(submissionData);
+    
+    try {
+      // Form hatalarını temizle
+      setErrors({});
+      
+      // Form verilerini doğrula
+      reportSchema.parse(formData);
+      
+      // Verileri düzenle (projectId için number dönüşümü yapılıyor)
+      const submissionData = {
+        ...formData,
+        projectId: formData.projectId ? parseInt(formData.projectId) : null,
+      };
+      
+      onSubmit(submissionData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Doğrulama hatalarını alan bazında kaydet
+        const fieldErrors: Record<string, string> = {};
+        
+        error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            const fieldName = err.path[0].toString();
+            fieldErrors[fieldName] = err.message;
+          }
+        });
+        
+        // Hataları state'e kaydet
+        setErrors(fieldErrors);
+      }
+    }
   };
 
   return (
@@ -88,8 +124,11 @@ export function ReportForm({
               onChange={handleChange}
               placeholder="Rapor başlığını girin"
               required
-              className="w-full box-border"
+              className={cn("w-full box-border", errors.title ? "border-red-500" : "")}
             />
+            {errors.title && (
+              <p className="text-sm text-red-500 mt-1">{errors.title}</p>
+            )}
           </div>
 
           {/* Rapor tarihi */}
@@ -102,8 +141,11 @@ export function ReportForm({
               value={formData.reportDate}
               onChange={handleChange}
               required
-              className="w-full box-border"
+              className={cn("w-full box-border", errors.reportDate ? "border-red-500" : "")}
             />
+            {errors.reportDate && (
+              <p className="text-sm text-red-500 mt-1">{errors.reportDate}</p>
+            )}
           </div>
 
           {/* Rapor türü ve proje - grid içinde yan yana */}
@@ -114,7 +156,7 @@ export function ReportForm({
                 value={formData.reportType}
                 onValueChange={(value) => handleSelectChange("reportType", value)}
               >
-                <SelectTrigger className="w-full box-border">
+                <SelectTrigger className={cn("w-full box-border", errors.reportType ? "border-red-500" : "")}>
                   <SelectValue placeholder="Rapor türünü seçin" />
                 </SelectTrigger>
                 <SelectContent>
@@ -125,6 +167,9 @@ export function ReportForm({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.reportType && (
+                <p className="text-sm text-red-500 mt-1">{errors.reportType}</p>
+              )}
             </div>
 
             <div className="space-y-2 w-full">
@@ -133,7 +178,7 @@ export function ReportForm({
                 value={formData.projectId}
                 onValueChange={(value) => handleSelectChange("projectId", value)}
               >
-                <SelectTrigger className="w-full box-border">
+                <SelectTrigger className={cn("w-full box-border", errors.projectId ? "border-red-500" : "")}>
                   <SelectValue placeholder="Proje seçin (opsiyonel)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -144,6 +189,9 @@ export function ReportForm({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.projectId && (
+                <p className="text-sm text-red-500 mt-1">{errors.projectId}</p>
+              )}
             </div>
           </div>
 
