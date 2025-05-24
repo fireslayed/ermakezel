@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 import {
   Card,
@@ -116,6 +118,11 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+  
+  // CKEditor değişiklikleri için özel işleyici
+  const handleEditorChange = (data: string) => {
+    setFormData(prev => ({ ...prev, description: data }));
+  };
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -197,14 +204,21 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
       
       <div className="space-y-2">
         <Label htmlFor="description">Açıklama</Label>
-        <Textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Rapor detaylarını girin"
-          rows={5}
-        />
+        <div className="min-h-[200px] border rounded-md overflow-hidden">
+          <CKEditor
+            editor={ClassicEditor}
+            data={formData.description || ""}
+            onChange={(event, editor) => {
+              const data = editor.getData();
+              handleEditorChange(data);
+            }}
+            config={{
+              toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'blockQuote', 'insertTable', 'undo', 'redo'],
+              language: 'tr',
+              placeholder: "Rapor detaylarını girin (zengin metin düzenleme özelliklerini kullanabilirsiniz)"
+            }}
+          />
+        </div>
       </div>
       
       <div className="space-y-2">
