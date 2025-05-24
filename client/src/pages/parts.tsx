@@ -428,7 +428,7 @@ export default function Parts() {
                           value={formData.color || ""}
                           onChange={handleChange}
                           placeholder="Renk adı ya da kodu"
-                          className="flex-grow"
+                          className={cn("flex-grow", errors.color ? "border-red-500" : "")}
                         />
                         <Input
                           type="color"
@@ -437,6 +437,9 @@ export default function Parts() {
                           className="w-12 p-1 h-10"
                         />
                       </div>
+                      {errors.color && (
+                        <p className="text-sm text-red-500 mt-1">{errors.color}</p>
+                      )}
                     </div>
                     
                     {/* Boyutlar */}
@@ -450,7 +453,11 @@ export default function Parts() {
                           value={formData.length === null ? "" : formData.length}
                           onChange={handleChange}
                           placeholder="0"
+                          className={cn(errors.length ? "border-red-500" : "")}
                         />
+                        {errors.length && (
+                          <p className="text-sm text-red-500 mt-1">{errors.length}</p>
+                        )}
                       </div>
                       <div>
                         <Label htmlFor="width">Genişlik (mm)</Label>
@@ -461,7 +468,11 @@ export default function Parts() {
                           value={formData.width === null ? "" : formData.width}
                           onChange={handleChange}
                           placeholder="0"
+                          className={cn(errors.width ? "border-red-500" : "")}
                         />
+                        {errors.width && (
+                          <p className="text-sm text-red-500 mt-1">{errors.width}</p>
+                        )}
                       </div>
                       <div>
                         <Label htmlFor="height">Yükseklik (mm)</Label>
@@ -472,7 +483,11 @@ export default function Parts() {
                           value={formData.height === null ? "" : formData.height}
                           onChange={handleChange}
                           placeholder="0"
+                          className={cn(errors.height ? "border-red-500" : "")}
                         />
+                        {errors.height && (
+                          <p className="text-sm text-red-500 mt-1">{errors.height}</p>
+                        )}
                       </div>
                     </div>
                     
@@ -486,7 +501,11 @@ export default function Parts() {
                         onChange={handleChange}
                         placeholder="0"
                         step="0.01"
+                        className={cn(errors.weight ? "border-red-500" : "")}
                       />
+                      {errors.weight && (
+                        <p className="text-sm text-red-500 mt-1">{errors.weight}</p>
+                      )}
                     </div>
                   </div>
                   
@@ -500,7 +519,11 @@ export default function Parts() {
                         type="file"
                         accept="image/*"
                         onChange={handleChange}
+                        className={cn(errors.image ? "border-red-500" : "")}
                       />
+                      {errors.image && (
+                        <p className="text-sm text-red-500 mt-1">{errors.image}</p>
+                      )}
                       {imagePreview && (
                         <div className="mt-2 border rounded-md p-2">
                           <img
@@ -540,7 +563,10 @@ export default function Parts() {
                 {/* Açıklama - CKEditor */}
                 <div className="space-y-2 w-full">
                   <Label htmlFor="description">Açıklama / Notlar</Label>
-                  <div className="border rounded-md overflow-hidden w-full">
+                  <div className={cn(
+                    "border rounded-md overflow-hidden w-full",
+                    errors.description ? "border-red-500" : ""
+                  )}>
                     <div className="w-full" style={{ boxSizing: 'border-box', overflowX: 'hidden' }}>
                       <CKEditor
                         editor={ClassicEditor as any}
@@ -578,6 +604,9 @@ export default function Parts() {
                       />
                     </div>
                   </div>
+                  {errors.description && (
+                    <p className="text-sm text-red-500 mt-1">{errors.description}</p>
+                  )}
                 </div>
                 
                 <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
