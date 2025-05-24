@@ -40,8 +40,10 @@ import { format } from "date-fns";
 
 // Extend the task schema with form validations
 const taskFormSchema = insertTaskSchema.extend({
-  title: z.string().min(3, "Title must be at least 3 characters"),
+  title: z.string().min(3, "Başlık en az 3 karakter olmalıdır"),
   dueDate: z.date().optional(),
+  planId: z.number().optional(),
+  userIds: z.array(z.number()).optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -69,6 +71,22 @@ export function TaskForm({
   const { data: projects } = useQuery({
     queryKey: ['/api/projects'],
   });
+  
+  // Fetch plans for the dropdown
+  const { data: plans } = useQuery({
+    queryKey: ['/api/plans'],
+  });
+  
+  // Fetch users for assignment
+  const { data: users } = useQuery({
+    queryKey: ['/api/users'],
+    retry: false, // Yetkisiz kullanıcılar için tekrar denemeden vazgeç
+    // @ts-ignore
+    onError: (error) => {
+      // Yalnızca yöneticiler kullanıcı listesine erişebilir
+      console.error("Kullanıcı listesi alınamadı", error);
+    }
+  });
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -77,7 +95,9 @@ export function TaskForm({
       description: "",
       status: "pending",
       priority: "medium",
-      completed: false
+      completed: false,
+      planId: undefined,
+      userIds: []
     }
   });
   
@@ -85,18 +105,27 @@ export function TaskForm({
   
   const taskMutation = useMutation({
     mutationFn: async (data: TaskFormValues) => {
+      // Önce normal görev oluşturma/güncelleme işlemini yap
       if (isEditing) {
         const res = await apiRequest("PATCH", `/api/tasks/${taskId}`, data);
         return res.json();
       } else {
         const res = await apiRequest("POST", "/api/tasks", data);
-        return res.json();
+        const taskData = await res.json();
+        
+        // Eğer kullanıcı atama yapıldıysa ve yeni görev oluşturulduysa
+        if (data.userIds && data.userIds.length > 0 && taskData.id) {
+          // Görevi kullanıcılara ata
+          await apiRequest("POST", `/api/tasks/${taskData.id}/assign`, { userIds: data.userIds });
+        }
+        
+        return taskData;
       }
     },
     onSuccess: () => {
       toast({
-        title: isEditing ? "Task updated" : "Task created",
-        description: isEditing ? "Your task has been updated successfully" : "Your new task has been created",
+        title: isEditing ? "Görev güncellendi" : "Görev oluşturuldu",
+        description: isEditing ? "Göreviniz başarıyla güncellendi" : "Yeni göreviniz oluşturuldu",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
@@ -286,6 +315,78 @@ export function TaskForm({
             
             <FormField
               control={form.control}
+              name="planId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Plan</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Plan seçin (opsiyonel)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {plans && Array.isArray(plans) && plans.map((plan: any) => (
+                        <SelectItem key={plan.id} value={plan.id.toString()}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Bu görevin ilişkili olduğu planı seçin
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {users && Array.isArray(users) && users.length > 0 && (
+              <FormField
+                control={form.control}
+                name="userIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Atanacak Kullanıcılar</FormLabel>
+                    <div className="space-y-2">
+                      {users.map((user: any) => (
+                        <div key={user.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`user-${user.id}`}
+                            checked={field.value?.includes(user.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                field.onChange([...(field.value || []), user.id]);
+                              } else {
+                                field.onChange(
+                                  field.value?.filter((id: number) => id !== user.id) || []
+                                );
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`user-${user.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {user.fullName || user.username}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <FormDescription>
+                      Bu görevi atamak istediğiniz kullanıcıları seçin
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            <FormField
+              control={form.control}
               name="completed"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -296,9 +397,9 @@ export function TaskForm({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Completed</FormLabel>
+                    <FormLabel>Tamamlandı</FormLabel>
                     <FormDescription>
-                      Mark this task as completed
+                      Bu görevi tamamlandı olarak işaretleyin
                     </FormDescription>
                   </div>
                 </FormItem>
@@ -307,7 +408,7 @@ export function TaskForm({
             
             <DialogFooter>
               <Button type="submit" disabled={taskMutation.isPending}>
-                {taskMutation.isPending ? "Saving..." : (isEditing ? "Update Task" : "Create Task")}
+                {taskMutation.isPending ? "Kaydediliyor..." : (isEditing ? "Görevi Güncelle" : "Görev Oluştur")}
               </Button>
             </DialogFooter>
           </form>
