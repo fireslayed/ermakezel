@@ -1107,20 +1107,40 @@ export default function Plan() {
                       className={`
                         rounded-full w-8 h-8 flex items-center justify-center cursor-pointer 
                         transition-all duration-300 relative
-                        ${point.hasNotes || point.hasImages 
-                          ? `bg-${point.color || 'green'}-600 text-white shadow-lg` 
-                          : `bg-${point.color || 'primary'} text-white hover:bg-${point.color || 'primary'}/90`
+                        ${point.hasNotes && point.hasImages ? "bg-black text-white shadow-lg" :
+                          point.hasNotes ? "bg-yellow-500 text-white shadow-lg" : 
+                          point.hasImages ? "bg-red-500 text-white shadow-lg" :
+                          `bg-${point.color || 'primary'} text-white hover:bg-${point.color || 'primary'}/90`
                         }
                       `}
                     >
                       <Plus className="h-5 w-5" />
                       
-                      {/* Ses dalgası animasyonu */}
+                      {/* Ses dalgası animasyonu - profesyonel görünüm */}
                       {(point.hasNotes || point.hasImages) && (
                         <>
-                          <span className={`absolute w-8 h-8 bg-${point.color || 'green'}-400 rounded-full animate-ping opacity-75`}></span>
-                          <span className={`absolute w-12 h-12 border-2 border-${point.color || 'green'}-400 rounded-full animate-pulse opacity-50`}></span>
-                          <span className={`absolute w-16 h-16 border border-${point.color || 'green'}-300 rounded-full animate-pulse opacity-30`}></span>
+                          {point.hasNotes && point.hasImages ? (
+                            // Siyah animasyon - Not + Resim
+                            <>
+                              <span className="absolute w-8 h-8 bg-gray-700 rounded-full animate-ping opacity-70"></span>
+                              <span className="absolute w-12 h-12 border-2 border-gray-600 rounded-full animate-pulse opacity-50"></span>
+                              <span className="absolute w-16 h-16 border border-gray-500 rounded-full animate-pulse opacity-30"></span>
+                            </>
+                          ) : point.hasNotes ? (
+                            // Sarı animasyon - Sadece Not
+                            <>
+                              <span className="absolute w-8 h-8 bg-yellow-400 rounded-full animate-ping opacity-70"></span>
+                              <span className="absolute w-12 h-12 border-2 border-yellow-400 rounded-full animate-pulse opacity-50"></span>
+                              <span className="absolute w-16 h-16 border border-yellow-300 rounded-full animate-pulse opacity-30"></span>
+                            </>
+                          ) : (
+                            // Kırmızı animasyon - Sadece Resim
+                            <>
+                              <span className="absolute w-8 h-8 bg-red-400 rounded-full animate-ping opacity-70"></span>
+                              <span className="absolute w-12 h-12 border-2 border-red-400 rounded-full animate-pulse opacity-50"></span>
+                              <span className="absolute w-16 h-16 border border-red-300 rounded-full animate-pulse opacity-30"></span>
+                            </>
+                          )}
                         </>
                       )}
                     </div>
