@@ -20,6 +20,7 @@ import Settings from "@/pages/settings";
 import Parts from "@/pages/parts";
 import Notifications from "@/pages/notifications";
 import NotFound from "@/pages/not-found";
+import LocationReport from "@/pages/location-report";
 
 function Router() {
   return (
@@ -83,6 +84,12 @@ function Router() {
       <Route path="/notifications">
         <AppLayout>
           <Notifications />
+        </AppLayout>
+      </Route>
+      
+      <Route path="/location-report">
+        <AppLayout>
+          <LocationReport />
         </AppLayout>
       </Route>
       
