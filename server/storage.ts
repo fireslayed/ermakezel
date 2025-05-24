@@ -1,6 +1,6 @@
 import { 
   users, tasks, projects, reports, parts, plans, planUsers, taskAssignments, 
-  reminders, notifications,
+  reminders, notifications, locationReports,
   type User, type InsertUser,
   type Task, type InsertTask,
   type Project, type InsertProject,
@@ -10,7 +10,8 @@ import {
   type PlanUser, type InsertPlanUser,
   type TaskAssignment, type InsertTaskAssignment,
   type Reminder, type InsertReminder,
-  type Notification, type InsertNotification
+  type Notification, type InsertNotification,
+  type LocationReport, type InsertLocationReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count, sql } from "drizzle-orm";
@@ -111,6 +112,124 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Yer Bildirimi (Location Report) fonksiyonları
+  async createLocationReport(insertLocationReport: InsertLocationReport): Promise<LocationReport> {
+    try {
+      const report = {
+        ...insertLocationReport,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      const [newReport] = await db
+        .insert(locationReports)
+        .values(report)
+        .returning();
+        
+      return newReport;
+    } catch (error) {
+      console.error("Yer bildirimi oluşturulurken hata:", error);
+      throw error;
+    }
+  }
+  
+  async getUserLocationReports(userId: number): Promise<LocationReport[]> {
+    try {
+      return await db
+        .select()
+        .from(locationReports)
+        .where(eq(locationReports.userId, userId))
+        .orderBy(locationReports.reportDate, 'desc');
+    } catch (error) {
+      console.error("Kullanıcının yer bildirimleri alınırken hata:", error);
+      throw error;
+    }
+  }
+  
+  async getAllLocationReports(): Promise<(LocationReport & { user: User })[]> {
+    try {
+      const reports = await db.query.locationReports.findMany({
+        with: {
+          user: true
+        },
+        orderBy: (locationReports, { desc }) => [desc(locationReports.reportDate)]
+      });
+      
+      return reports;
+    } catch (error) {
+      console.error("Tüm yer bildirimleri alınırken hata:", error);
+      throw error;
+    }
+  }
+  
+  async getLocationReport(id: number): Promise<LocationReport | undefined> {
+    try {
+      const [report] = await db
+        .select()
+        .from(locationReports)
+        .where(eq(locationReports.id, id));
+        
+      return report;
+    } catch (error) {
+      console.error("Yer bildirimi detayı alınırken hata:", error);
+      throw error;
+    }
+  }
+  
+  async getTodayLocationReport(userId: number): Promise<LocationReport | undefined> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Günün başlangıcı
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1); // Bir sonraki günün başlangıcı
+      
+      const [report] = await db
+        .select()
+        .from(locationReports)
+        .where(and(
+          eq(locationReports.userId, userId),
+          sql`${locationReports.reportDate} >= ${today}`,
+          sql`${locationReports.reportDate} < ${tomorrow}`
+        ));
+        
+      return report;
+    } catch (error) {
+      console.error("Bugünkü yer bildirimi alınırken hata:", error);
+      throw error;
+    }
+  }
+  
+  async updateLocationReport(id: number, reportUpdate: Partial<InsertLocationReport>): Promise<LocationReport | undefined> {
+    try {
+      const [updatedReport] = await db
+        .update(locationReports)
+        .set({
+          ...reportUpdate,
+          updatedAt: new Date()
+        })
+        .where(eq(locationReports.id, id))
+        .returning();
+        
+      return updatedReport;
+    } catch (error) {
+      console.error("Yer bildirimi güncellenirken hata:", error);
+      throw error;
+    }
+  }
+  
+  async deleteLocationReport(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(locationReports)
+        .where(eq(locationReports.id, id));
+        
+      return true;
+    } catch (error) {
+      console.error("Yer bildirimi silinirken hata:", error);
+      return false;
+    }
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));

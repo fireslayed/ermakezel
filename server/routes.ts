@@ -12,7 +12,8 @@ import {
   insertPlanUserSchema,
   insertTaskAssignmentSchema,
   insertReminderSchema,
-  insertNotificationSchema
+  insertNotificationSchema,
+  insertLocationReportSchema
 } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
