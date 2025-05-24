@@ -114,6 +114,13 @@ function ReportForm({ defaultValues, onSubmit, projects, isSubmitting }: ReportF
     files: defaultValues?.files || [],
     reportDate: defaultValues?.reportDate || format(new Date(), "yyyy-MM-dd"),
   });
+  
+  // Form container stili - taşmaları engellemek için
+  const formContainerStyle = {
+    maxWidth: "100%",
+    boxSizing: "border-box" as const,
+    overflow: "hidden" as const
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
