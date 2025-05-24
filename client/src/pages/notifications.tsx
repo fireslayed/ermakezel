@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/page-header";
-import { AppLayout } from "@/layout/app-layout";
 import { NotificationsList } from "@/components/notifications-list";
 import { Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +6,7 @@ import { RemindersList } from "@/components/reminders-list";
 
 export default function NotificationsPage() {
   return (
-    <AppLayout>
+    <div className="container mx-auto py-6">
       <PageHeader
         heading="Bildirimler ve Hatırlatıcılar"
         text="Sistem bildirimleri ve görev hatırlatıcılarını yönetin."
@@ -28,6 +27,6 @@ export default function NotificationsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </div>
   );
 }
