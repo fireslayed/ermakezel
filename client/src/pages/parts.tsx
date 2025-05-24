@@ -157,7 +157,26 @@ export default function Parts() {
   // Parça güncelle
   const updatePartMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<PartFormValues> }) => {
+      // API isteği, userId içeren veri gönder
       const res = await apiRequest("PUT", `/api/parts/${id}`, data);
+      // HTTP 400 hatasında da JSON yanıt alıyoruz, bunu işleyelim
+      if (!res.ok) {
+        const errorData = await res.json();
+        // Zod hataları varsa, bunları yakala
+        if (errorData.errors) {
+          const fieldErrors: Record<string, string> = {};
+          errorData.errors.forEach((err: any) => {
+            if (err.path && err.path.length > 0) {
+              const fieldName = err.path[err.path.length - 1].toString();
+              fieldErrors[fieldName] = err.message;
+            }
+          });
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+          }
+        }
+        throw new Error(errorData.message || "Parça güncellenirken bir hata oluştu");
+      }
       return res.json();
     },
     onSuccess: () => {
