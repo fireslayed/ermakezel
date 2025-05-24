@@ -384,26 +384,26 @@ export default function LocationReportPage() {
   const filteredReports = allReports || reports || [];
   
   return (
-    <div className="container max-w-2xl mx-auto px-4 py-3">
+    <div className="container w-full mx-auto px-2 sm:px-4 py-2 sm:py-3 max-w-xl sm:max-w-2xl">
       <Card className="flex flex-col">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Yer Bildirimi</CardTitle>
-            <Badge variant="outline">
+            <CardTitle className="text-base sm:text-lg">Yer Bildirimi</CardTitle>
+            <Badge variant="outline" className="text-xs">
               <ClockIcon className="mr-1 h-3 w-3" />
-              {format(new Date(), 'dd MMMM yyyy', { locale: tr })}
+              {format(new Date(), 'dd MMM yyyy', { locale: tr })}
             </Badge>
           </div>
         </CardHeader>
         
         <Separator />
         
-        <CardContent className="py-3 overflow-y-auto max-h-[65vh]">
-          <div className="space-y-3">
+        <CardContent className="py-2 sm:py-3 overflow-y-auto max-h-[50vh] sm:max-h-[65vh]">
+          <div className="space-y-2 sm:space-y-3">
             {filteredReports.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-center">
-                <MapPinIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">Henüz yer bildirimi bulunmuyor.</p>
+              <div className="flex flex-col items-center justify-center h-24 sm:h-32 text-center">
+                <MapPinIcon className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">Henüz yer bildirimi bulunmuyor.</p>
               </div>
             ) : (
               filteredReports.map((report: any) => {
@@ -417,9 +417,9 @@ export default function LocationReportPage() {
                     key={report.id} 
                     className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} gap-2 max-w-[80%]`}>
+                    <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} gap-1 sm:gap-2 max-w-[85%] sm:max-w-[80%]`}>
                       {!isCurrentUser && (
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
                           <AvatarFallback className={`${backgroundColor} text-white text-xs`}>
                             {userInitials}
                           </AvatarFallback>
@@ -432,86 +432,59 @@ export default function LocationReportPage() {
                         )}
                         
                         <div 
-                          className={`rounded-lg p-3 ${
+                          className={`rounded-lg p-2 sm:p-3 ${
                             isCurrentUser 
                               ? 'bg-primary text-primary-foreground' 
                               : 'bg-muted'
                           }`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <div className="font-medium">{report.location}</div>
-                            <span className="text-xs opacity-70">
+                            <div className="text-sm font-medium truncate mr-2">{report.location}</div>
+                            <span className="text-xs opacity-70 whitespace-nowrap">
                               {format(new Date(report.reportDate), 'HH:mm')}
                             </span>
                           </div>
                           
                           {report.description && (
-                            <p className="text-sm">{report.description}</p>
+                            <p className="text-xs sm:text-sm">{report.description}</p>
                           )}
                           
                           {report.gpsLat !== null && report.gpsLong !== null && (
                             <div className="flex items-center justify-between mt-1">
-                              <span className={`text-xs ${isCurrentUser ? 'text-blue-100' : 'text-muted-foreground'}`}>
-                                GPS: {report.gpsLat !== null ? Number(report.gpsLat).toFixed(6) : "N/A"}, {report.gpsLong !== null ? Number(report.gpsLong).toFixed(6) : "N/A"}
+                              <span className={`text-xs ${isCurrentUser ? 'text-blue-100' : 'text-muted-foreground'} truncate mr-2`}>
+                                GPS: {report.gpsLat !== null ? Number(report.gpsLat).toFixed(4) : "N/A"}, {report.gpsLong !== null ? Number(report.gpsLong).toFixed(4) : "N/A"}
                               </span>
                               
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <a 
-                                      href={report.gpsLat !== null && report.gpsLong !== null ? getMapUrl(Number(report.gpsLat), Number(report.gpsLong)) : "#"} 
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={`p-1 rounded hover:bg-black/10 ${isCurrentUser ? 'text-white' : ''}`}
-                                    >
-                                      <MapIcon className="h-4 w-4" />
-                                    </a>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Haritada Görüntüle</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <a 
+                                href={report.gpsLat !== null && report.gpsLong !== null ? getMapUrl(Number(report.gpsLat), Number(report.gpsLong)) : "#"} 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`p-1 rounded hover:bg-black/10 ${isCurrentUser ? 'text-white' : ''}`}
+                              >
+                                <MapIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </a>
                             </div>
                           )}
                           
                           {(isCurrentUser || currentUser?.isAdmin) && (
-                            <div className="flex justify-end gap-1 mt-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className={`h-6 w-6 ${isCurrentUser ? 'text-blue-100 hover:text-white hover:bg-blue-600' : ''}`}
-                                      onClick={() => handleEditReport(report)}
-                                    >
-                                      <FileEditIcon className="h-3 w-3" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Düzenle</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                            <div className="flex justify-end gap-1 mt-1 sm:mt-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className={`h-5 w-5 sm:h-6 sm:w-6 ${isCurrentUser ? 'text-blue-100 hover:text-white hover:bg-blue-600' : ''}`}
+                                onClick={() => handleEditReport(report)}
+                              >
+                                <FileEditIcon className="h-3 w-3" />
+                              </Button>
                               
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className={`h-6 w-6 ${isCurrentUser ? 'text-blue-100 hover:text-white hover:bg-blue-600' : ''}`}
-                                      onClick={() => handleDeleteReport(report.id)}
-                                    >
-                                      <TrashIcon className="h-3 w-3" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Sil</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className={`h-5 w-5 sm:h-6 sm:w-6 ${isCurrentUser ? 'text-blue-100 hover:text-white hover:bg-blue-600' : ''}`}
+                                onClick={() => handleDeleteReport(report.id)}
+                              >
+                                <TrashIcon className="h-3 w-3" />
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -531,7 +504,7 @@ export default function LocationReportPage() {
         
         <Separator />
         
-        <CardFooter className="py-3">
+        <CardFooter className="py-2 sm:py-3">
           <form onSubmit={handleSubmit} className="flex gap-2 w-full">
             <div className="flex-1">
               <div className="relative">
@@ -540,7 +513,7 @@ export default function LocationReportPage() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
-                  className="pr-10"
+                  className="pr-10 text-sm h-9"
                 />
                 <Button 
                   type="button" 
@@ -562,6 +535,8 @@ export default function LocationReportPage() {
             
             <Button 
               type="submit" 
+              size="sm"
+              className="h-9"
               disabled={createMutation.isPending || !location.trim()}
             >
               {createMutation.isPending ? (
@@ -576,14 +551,14 @@ export default function LocationReportPage() {
         {/* Düzenleme Modalı */}
         {editingReport && (
           <Dialog open={!!editingReport} onOpenChange={(open) => !open && resetForm()}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Yer Bildirimi Düzenle</DialogTitle>
               </DialogHeader>
               
-              <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-location">Konum *</Label>
+              <form onSubmit={handleSubmit} className="space-y-3 pt-2 sm:space-y-4 sm:pt-4">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="edit-location" className="text-sm">Konum *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="edit-location"
@@ -591,10 +566,12 @@ export default function LocationReportPage() {
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       required
+                      className="text-sm"
                     />
                     <Button 
                       type="button" 
                       variant="outline" 
+                      size="sm"
                       onClick={getGeoLocation}
                     >
                       <MapPinIcon className="h-4 w-4" />
@@ -602,27 +579,27 @@ export default function LocationReportPage() {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description">Açıklama</Label>
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="edit-description" className="text-sm">Açıklama</Label>
                   <Textarea
                     id="edit-description"
                     placeholder="Örnek: Müşteri ziyareti / Kurulum devam ediyor"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[100px]"
+                    className="min-h-[80px] sm:min-h-[100px] text-sm"
                   />
                 </div>
                 
                 {(gpsLat !== null && gpsLong !== null) && (
-                  <div className="space-y-2">
-                    <Label>GPS Koordinatları</Label>
-                    <div className="flex justify-between items-center rounded border p-2 text-sm">
-                      <span>{gpsLat.toFixed(6)}, {gpsLong.toFixed(6)}</span>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label className="text-sm">GPS Koordinatları</Label>
+                    <div className="flex justify-between items-center rounded border p-2 text-xs sm:text-sm">
+                      <span className="truncate mr-2">{gpsLat.toFixed(6)}, {gpsLong.toFixed(6)}</span>
                       <a 
                         href={getMapUrl(gpsLat, gpsLong)} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
+                        className="text-blue-500 hover:underline flex-shrink-0"
                       >
                         <MapIcon className="h-4 w-4" />
                       </a>
@@ -634,12 +611,14 @@ export default function LocationReportPage() {
                   <Button 
                     type="button" 
                     variant="outline" 
+                    size="sm"
                     onClick={resetForm}
                   >
                     İptal
                   </Button>
                   <Button 
                     type="submit" 
+                    size="sm"
                     disabled={updateMutation.isPending}
                   >
                     {updateMutation.isPending ? (
