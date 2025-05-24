@@ -86,10 +86,7 @@ export default function LocationReportPage() {
   // Yer bildirimi oluşturma
   const createMutation = useMutation({
     mutationFn: (data: { location: string; description: string }) => {
-      return apiRequest('/api/location-reports', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      return apiRequest('/api/location-reports', 'POST', data);
     },
     onSuccess: () => {
       toast({
@@ -115,9 +112,9 @@ export default function LocationReportPage() {
   // Yer bildirimi güncelleme
   const updateMutation = useMutation({
     mutationFn: (data: { id: number; location: string; description: string }) => {
-      return apiRequest(`/api/location-reports/${data.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ location: data.location, description: data.description })
+      return apiRequest(`/api/location-reports/${data.id}`, 'PUT', { 
+        location: data.location, 
+        description: data.description 
       });
     },
     onSuccess: () => {
@@ -145,9 +142,7 @@ export default function LocationReportPage() {
   // Yer bildirimi silme
   const deleteMutation = useMutation({
     mutationFn: (id: number) => {
-      return apiRequest(`/api/location-reports/${id}`, {
-        method: 'DELETE'
-      });
+      return apiRequest(`/api/location-reports/${id}`, 'DELETE');
     },
     onSuccess: () => {
       toast({

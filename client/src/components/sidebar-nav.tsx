@@ -62,7 +62,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
     queryKey: ['/api/notifications/unread'],
     queryFn: async () => {
       try {
-        const data = await apiRequest('/api/notifications/unread');
+        const data = await apiRequest('/api/notifications/unread', { method: 'GET' });
         return data || [];
       } catch (error) {
         return [];
