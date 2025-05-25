@@ -664,6 +664,1053 @@ export default function Settings() {
                   </div>
                 </div>
               </TabsContent>
+              
+              {/* 4. Mail Ayarları */}
+              <TabsContent value="mail">
+                <div>
+                  <h1 className="text-2xl font-bold mb-6">Mail Ayarları</h1>
+                  <p className="text-muted-foreground mb-8">Bildirim ve raporların e-posta ile gönderilmesi için yapılandırma.</p>
+                  
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">E-posta Sunucu Ayarları</CardTitle>
+                        <CardDescription>
+                          SMTP sunucu yapılandırmasını güncelleyin
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...mailForm}>
+                          <form className="space-y-4">
+                            <FormField
+                              control={mailForm.control}
+                              name="smtpServer"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">SMTP Sunucu</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="smtp.example.com" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={mailForm.control}
+                              name="smtpPort"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Port</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="587" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={mailForm.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Kullanıcı Adı</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="mail@example.com" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={mailForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Şifre</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="••••••••" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={mailForm.control}
+                              name="fromEmail"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Gönderen E-posta</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="no-reply@example.com" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={mailForm.control}
+                              name="useSsl"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-sm">SSL Kullan</FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Güvenli bağlantı kullan (TLS/SSL)
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex gap-2 pt-4">
+                              <Button type="button" variant="outline" onClick={sendTestEmail} className="flex-1">
+                                Test E-postası Gönder
+                              </Button>
+                              <Button type="submit" className="flex-1">
+                                Kaydet
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="space-y-6">
+                      <Card className="shadow-sm border-0">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-medium">E-posta Şablonları</CardTitle>
+                          <CardDescription>
+                            Otomatik e-posta şablonlarını yönetin
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div className="rounded-md border p-3 flex justify-between items-center">
+                              <div>
+                                <h4 className="text-sm font-medium">Rapor Gönderimi</h4>
+                                <p className="text-xs text-muted-foreground">Rapor paylaşımı için e-posta şablonu</p>
+                              </div>
+                              <Button variant="outline" size="sm">Düzenle</Button>
+                            </div>
+                            <div className="rounded-md border p-3 flex justify-between items-center">
+                              <div>
+                                <h4 className="text-sm font-medium">Görev Bildirimi</h4>
+                                <p className="text-xs text-muted-foreground">Görev atama bildirimi şablonu</p>
+                              </div>
+                              <Button variant="outline" size="sm">Düzenle</Button>
+                            </div>
+                            <div className="rounded-md border p-3 flex justify-between items-center">
+                              <div>
+                                <h4 className="text-sm font-medium">Hatırlatıcı</h4>
+                                <p className="text-xs text-muted-foreground">Görev hatırlatma e-posta şablonu</p>
+                              </div>
+                              <Button variant="outline" size="sm">Düzenle</Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="shadow-sm border-0">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-medium">E-posta Günlüğü</CardTitle>
+                          <CardDescription>
+                            Son gönderilen e-postaları görüntüleyin
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="rounded-md border p-3 space-y-4">
+                            <div className="text-center text-muted-foreground text-sm">
+                              Son 24 saat içinde gönderilmiş e-posta bulunmuyor
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* 5. Veri ve Yedekleme */}
+              <TabsContent value="backup">
+                <div>
+                  <h1 className="text-2xl font-bold mb-6">Veri ve Yedekleme</h1>
+                  <p className="text-muted-foreground mb-8">Veri yedekleme ve sıfırlama işlemlerini yönetin.</p>
+                  
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Otomatik Yedekleme</CardTitle>
+                        <CardDescription>
+                          Veritabanı ve dosya yedekleme ayarlarını yapılandırın
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...backupForm}>
+                          <form className="space-y-4">
+                            <FormField
+                              control={backupForm.control}
+                              name="backupFrequency"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Yedekleme Sıklığı</FormLabel>
+                                  <Select 
+                                    onValueChange={field.onChange} 
+                                    defaultValue={field.value}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="h-9">
+                                        <SelectValue placeholder="Sıklık seçin" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="daily">Günlük</SelectItem>
+                                      <SelectItem value="weekly">Haftalık</SelectItem>
+                                      <SelectItem value="monthly">Aylık</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={backupForm.control}
+                              name="backupLocation"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Yedekleme Konumu</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="/backups" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    Yedeklerin kaydedileceği dizin yolu
+                                  </FormDescription>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex gap-2 pt-4">
+                              <Button type="button" variant="outline" className="flex-1">
+                                Manuel Yedekleme
+                              </Button>
+                              <Button type="submit" className="flex-1">
+                                Ayarları Kaydet
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="space-y-6">
+                      <Card className="shadow-sm border-0">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-medium">Yedek Geçmişi</CardTitle>
+                          <CardDescription>
+                            Önceki yedeklemeleri görüntüleyin ve geri yükleyin
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="rounded-md border p-4 space-y-4">
+                            <div className="text-center text-muted-foreground text-sm">
+                              Henüz yedekleme yapılmamış.
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="shadow-sm border-0">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-medium text-destructive">Veri Sıfırlama</CardTitle>
+                          <CardDescription>
+                            Sistem verilerini sıfırlama işlemleri
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" className="w-full border-red-200 text-destructive hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950">
+                                  Demo Verileri Sıfırla
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Demo Verileri Sıfırla</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Bu işlem tüm demo verilerini varsayılan değerlerine sıfırlayacaktır. Devam etmek istediğinizden emin misiniz?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>İptal</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleResetDemoData} className="bg-destructive">
+                                    Sıfırla
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" className="w-full border-red-200 text-destructive hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950">
+                                  Tüm Verileri Temizle
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Tüm Verileri Temizle</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Bu işlem tüm sistem verilerini kalıcı olarak silecektir. Bu işlem geri alınamaz. Devam etmek istediğinizden emin misiniz?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>İptal</AlertDialogCancel>
+                                  <AlertDialogAction className="bg-destructive">
+                                    Verileri Temizle
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* 6. Bildirim Ayarları */}
+              <TabsContent value="notifications">
+                <div>
+                  <h1 className="text-2xl font-bold mb-6">Bildirim Ayarları</h1>
+                  <p className="text-muted-foreground mb-8">Bildirim tercihleri ve hatırlatıcıların yapılandırılması.</p>
+                  
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Bildirim Kanalları</CardTitle>
+                        <CardDescription>
+                          Bildirimlerin nasıl alınacağını yapılandırın
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Uygulama Bildirimleri</h4>
+                              <p className="text-xs text-muted-foreground">Sistem içi bildirimler</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">E-posta Bildirimleri</h4>
+                              <p className="text-xs text-muted-foreground">Bildirimleri e-posta ile al</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">SMS Bildirimleri</h4>
+                              <p className="text-xs text-muted-foreground">Bildirimleri SMS ile al</p>
+                            </div>
+                            <Switch />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Bildirim Tercihleri</CardTitle>
+                        <CardDescription>
+                          Hangi olaylar için bildirim alacağınızı yapılandırın
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Görev Atamaları</h4>
+                              <p className="text-xs text-muted-foreground">Yeni görev atandığında bildirim al</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Görev Hatırlatıcıları</h4>
+                              <p className="text-xs text-muted-foreground">Yaklaşan görevler için hatırlatma al</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Rapor Gönderimi</h4>
+                              <p className="text-xs text-muted-foreground">Yeni rapor paylaşıldığında bildirim al</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Sistem Güncellemeleri</h4>
+                              <p className="text-xs text-muted-foreground">Sistem güncellemeleri hakkında bildirim al</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-sm border-0 md:col-span-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Hatırlatıcı Yapılandırması</CardTitle>
+                        <CardDescription>
+                          Görev hatırlatmalarının ne zaman gönderileceğini ayarlayın
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="p-4 border rounded-md">
+                            <h4 className="text-sm font-medium mb-2">Görev Başlangıcı</h4>
+                            <Select defaultValue="1day">
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1hour">1 saat önce</SelectItem>
+                                <SelectItem value="3hours">3 saat önce</SelectItem>
+                                <SelectItem value="1day">1 gün önce</SelectItem>
+                                <SelectItem value="2days">2 gün önce</SelectItem>
+                                <SelectItem value="1week">1 hafta önce</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="p-4 border rounded-md">
+                            <h4 className="text-sm font-medium mb-2">Görev Teslim Süresi</h4>
+                            <Select defaultValue="1day">
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1hour">1 saat önce</SelectItem>
+                                <SelectItem value="3hours">3 saat önce</SelectItem>
+                                <SelectItem value="1day">1 gün önce</SelectItem>
+                                <SelectItem value="2days">2 gün önce</SelectItem>
+                                <SelectItem value="1week">1 hafta önce</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="p-4 border rounded-md">
+                            <h4 className="text-sm font-medium mb-2">Geciken Görevler</h4>
+                            <Select defaultValue="daily">
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="hourly">Her saat</SelectItem>
+                                <SelectItem value="daily">Günlük</SelectItem>
+                                <SelectItem value="weekly">Haftalık</SelectItem>
+                                <SelectItem value="disabled">Devre dışı</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 flex justify-end">
+                          <Button>Ayarları Kaydet</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* 7. Güvenlik */}
+              <TabsContent value="security">
+                <div>
+                  <h1 className="text-2xl font-bold mb-6">Güvenlik Ayarları</h1>
+                  <p className="text-muted-foreground mb-8">Sistem güvenliği ve erişim kontrolü yapılandırması.</p>
+                  
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Şifre Politikası</CardTitle>
+                        <CardDescription>
+                          Kullanıcı şifre gereksinimleri
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Minimum Uzunluk</h4>
+                              <p className="text-xs text-muted-foreground">Şifre için en az karakter sayısı</p>
+                            </div>
+                            <Select defaultValue="8">
+                              <SelectTrigger className="w-20 h-8">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="6">6</SelectItem>
+                                <SelectItem value="8">8</SelectItem>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="12">12</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Büyük Harf Zorunlu</h4>
+                              <p className="text-xs text-muted-foreground">En az bir büyük harf içermeli</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Özel Karakter Zorunlu</h4>
+                              <p className="text-xs text-muted-foreground">En az bir özel karakter içermeli</p>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Şifre Süresi</h4>
+                              <p className="text-xs text-muted-foreground">Şifre değişim zorunluluğu</p>
+                            </div>
+                            <Select defaultValue="90">
+                              <SelectTrigger className="w-24 h-8">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="30">30 gün</SelectItem>
+                                <SelectItem value="60">60 gün</SelectItem>
+                                <SelectItem value="90">90 gün</SelectItem>
+                                <SelectItem value="0">Sınırsız</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <Button className="w-full mt-4">Kaydet</Button>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Oturum Güvenliği</CardTitle>
+                        <CardDescription>
+                          Kullanıcı oturum ve giriş ayarları
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Oturum Süresi</h4>
+                              <p className="text-xs text-muted-foreground">Kullanıcı oturumunun aktif kalma süresi</p>
+                            </div>
+                            <Select defaultValue="60">
+                              <SelectTrigger className="w-24 h-8">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="15">15 dakika</SelectItem>
+                                <SelectItem value="30">30 dakika</SelectItem>
+                                <SelectItem value="60">1 saat</SelectItem>
+                                <SelectItem value="240">4 saat</SelectItem>
+                                <SelectItem value="480">8 saat</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Başarısız Giriş Limiti</h4>
+                              <p className="text-xs text-muted-foreground">Hesap kilitleme için deneme sayısı</p>
+                            </div>
+                            <Select defaultValue="5">
+                              <SelectTrigger className="w-16 h-8">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="3">3</SelectItem>
+                                <SelectItem value="5">5</SelectItem>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="0">Sınırsız</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">Hesap Kilitleme Süresi</h4>
+                              <p className="text-xs text-muted-foreground">Başarısız girişlerden sonra kilitleme süresi</p>
+                            </div>
+                            <Select defaultValue="15">
+                              <SelectTrigger className="w-24 h-8">
+                                <SelectValue placeholder="Seçin" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="5">5 dakika</SelectItem>
+                                <SelectItem value="15">15 dakika</SelectItem>
+                                <SelectItem value="30">30 dakika</SelectItem>
+                                <SelectItem value="60">1 saat</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div>
+                              <h4 className="text-sm font-medium">IP Adres Kısıtlaması</h4>
+                              <p className="text-xs text-muted-foreground">Belirli IP adreslerinden erişime izin ver</p>
+                            </div>
+                            <Switch />
+                          </div>
+                        </div>
+                        
+                        <Button className="w-full mt-4">Kaydet</Button>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-sm border-0 md:col-span-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Erişim Logları</CardTitle>
+                        <CardDescription>
+                          Son kullanıcı erişim ve işlem kayıtları
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border overflow-hidden">
+                          <Table>
+                            <TableHeader className="bg-muted/50">
+                              <TableRow>
+                                <TableHead>Kullanıcı</TableHead>
+                                <TableHead>Tarih & Saat</TableHead>
+                                <TableHead>IP Adresi</TableHead>
+                                <TableHead>İşlem</TableHead>
+                                <TableHead>Durum</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              <TableRow>
+                                <TableCell className="font-medium">ermak</TableCell>
+                                <TableCell>{new Date().toLocaleString()}</TableCell>
+                                <TableCell>192.168.1.100</TableCell>
+                                <TableCell>Giriş</TableCell>
+                                <TableCell>
+                                  <Badge variant="success" className="bg-opacity-10">Başarılı</Badge>
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell className="font-medium">ermak</TableCell>
+                                <TableCell>{new Date(Date.now() - 3600000).toLocaleString()}</TableCell>
+                                <TableCell>192.168.1.100</TableCell>
+                                <TableCell>Rapor Erişimi</TableCell>
+                                <TableCell>
+                                  <Badge variant="success" className="bg-opacity-10">Başarılı</Badge>
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell className="font-medium">admin</TableCell>
+                                <TableCell>{new Date(Date.now() - 86400000).toLocaleString()}</TableCell>
+                                <TableCell>192.168.1.101</TableCell>
+                                <TableCell>Ayar Değişikliği</TableCell>
+                                <TableCell>
+                                  <Badge variant="success" className="bg-opacity-10">Başarılı</Badge>
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* 8. API Ayarları */}
+              <TabsContent value="api">
+                <div>
+                  <h1 className="text-2xl font-bold mb-6">API Ayarları</h1>
+                  <p className="text-muted-foreground mb-8">API erişim ve entegrasyon yapılandırması.</p>
+                  
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="shadow-sm border-0 md:col-span-2">
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <CardTitle className="text-lg font-medium">API Anahtarları</CardTitle>
+                            <CardDescription>
+                              Sisteme erişim için API anahtarlarını yönetin
+                            </CardDescription>
+                          </div>
+                          <Button size="sm" className="gap-1">
+                            <Plus className="h-4 w-4" /> Anahtar Oluştur
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="rounded-md border overflow-hidden">
+                          <Table>
+                            <TableHeader className="bg-muted/50">
+                              <TableRow>
+                                <TableHead>İsim</TableHead>
+                                <TableHead>Anahtar</TableHead>
+                                <TableHead>İzinler</TableHead>
+                                <TableHead>Oluşturulma Tarihi</TableHead>
+                                <TableHead>Son Kullanım</TableHead>
+                                <TableHead>İşlemler</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              <TableRow>
+                                <TableCell className="font-medium">Ana Sistem</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <code className="bg-muted px-1 py-0.5 rounded text-xs">••••••••••••••••</code>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
+                                      <RefreshCw className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="capitalize">
+                                    Tam Erişim
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-sm">12 Mart 2023</TableCell>
+                                <TableCell className="text-muted-foreground text-sm">5 dakika önce</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Düzenle">
+                                      <FileEditIcon className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Sil">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              <TableRow>
+                                <TableCell className="font-medium">Mobil Uygulama</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    <code className="bg-muted px-1 py-0.5 rounded text-xs">••••••••••••••••</code>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
+                                      <RefreshCw className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="capitalize">
+                                    Salt Okunur
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-sm">5 Mayıs 2023</TableCell>
+                                <TableCell className="text-muted-foreground text-sm">1 gün önce</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Düzenle">
+                                      <FileEditIcon className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Sil">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Webhook Yapılandırması</CardTitle>
+                        <CardDescription>
+                          Olay tetikleyici webhook URL'leri
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="p-3 border rounded-md">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="text-sm font-medium">Yeni Görev Oluşturuldu</h4>
+                              <Switch defaultChecked />
+                            </div>
+                            <Input 
+                              className="h-8 text-xs" 
+                              placeholder="https://example.com/webhooks/tasks" 
+                              defaultValue="https://example.com/webhooks/tasks" 
+                            />
+                          </div>
+                          
+                          <div className="p-3 border rounded-md">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="text-sm font-medium">Rapor Tamamlandı</h4>
+                              <Switch />
+                            </div>
+                            <Input 
+                              className="h-8 text-xs" 
+                              placeholder="https://example.com/webhooks/reports" 
+                            />
+                          </div>
+                          
+                          <div className="p-3 border rounded-md">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="text-sm font-medium">Parça Talebi</h4>
+                              <Switch />
+                            </div>
+                            <Input 
+                              className="h-8 text-xs" 
+                              placeholder="https://example.com/webhooks/parts" 
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button className="w-full mt-4">Kaydet</Button>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Harici Servisler</CardTitle>
+                        <CardDescription>
+                          Entegre harici servislerin yapılandırması
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 bg-blue-500 rounded flex items-center justify-center text-white">
+                                A
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-medium">Anthropic Claude AI</h4>
+                                <p className="text-xs text-muted-foreground">Yapay zeka hizmetleri</p>
+                              </div>
+                            </div>
+                            <Switch />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 bg-green-500 rounded flex items-center justify-center text-white">
+                                S
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-medium">SendGrid</h4>
+                                <p className="text-xs text-muted-foreground">E-posta gönderim servisi</p>
+                              </div>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 border rounded-md">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 bg-purple-500 rounded flex items-center justify-center text-white">
+                                G
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-medium">Google Maps</h4>
+                                <p className="text-xs text-muted-foreground">Harita ve konum servisi</p>
+                              </div>
+                            </div>
+                            <Switch defaultChecked />
+                          </div>
+                        </div>
+                        
+                        <Button className="w-full mt-4">API Anahtarlarını Yönet</Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* 9. Hakkında */}
+              <TabsContent value="about">
+                <div>
+                  <h1 className="text-2xl font-bold mb-6">Hakkında</h1>
+                  <p className="text-muted-foreground mb-8">Sistem bilgileri ve lisans detayları.</p>
+                  
+                  <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="shadow-sm border-0">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-medium">Sistem Bilgileri</CardTitle>
+                        <CardDescription>
+                          Uygulama ve sistem detayları
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex flex-col items-center justify-center mb-6">
+                            <h2 className="text-xl font-bold text-primary">ErmkaPoint Beta</h2>
+                            <p className="text-sm text-muted-foreground">Versiyon 2.1.5 (Build 2405)</p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-sm font-medium">Yazılım Sürümü</span>
+                              <span className="text-sm">2.1.5</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-sm font-medium">Veritabanı Sürümü</span>
+                              <span className="text-sm">1.3.0</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-sm font-medium">Son Güncelleme</span>
+                              <span className="text-sm">24 Mayıs 2025</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-sm font-medium">Lisans Durumu</span>
+                              <span className="text-sm text-green-500">Aktif</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-sm font-medium">Lisans Sahibi</span>
+                              <span className="text-sm">ERMKA Mühendislik</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-sm font-medium">Lisans Bitiş Tarihi</span>
+                              <span className="text-sm">31 Aralık 2025</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 flex justify-center">
+                          <Button variant="outline">Güncellemeleri Kontrol Et</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="space-y-6">
+                      <Card className="shadow-sm border-0">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-medium">Destek ve İletişim</CardTitle>
+                          <CardDescription>
+                            Yardım ve teknik destek bilgileri
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="p-4 border rounded-md">
+                              <h4 className="text-sm font-medium mb-2">Teknik Destek</h4>
+                              <p className="text-sm mb-2">Teknik sorunlar ve kullanım desteği için:</p>
+                              <div className="space-y-1">
+                                <div className="flex items-center text-sm">
+                                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span>destek@ermka.com</span>
+                                </div>
+                                <div className="flex items-center text-sm">
+                                  <Bell className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span>+90 212 555 12 34</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="p-4 border rounded-md">
+                              <h4 className="text-sm font-medium mb-2">Dokümantasyon</h4>
+                              <p className="text-sm mb-2">Kullanım kılavuzu ve yardım dökümanları:</p>
+                              <Button variant="link" className="h-auto p-0 text-sm">
+                                Kullanım Kılavuzunu Görüntüle
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="shadow-sm border-0">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg font-medium">Sistem Durumu</CardTitle>
+                          <CardDescription>
+                            Servis ve sunucu durumu
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center p-2 border-b">
+                              <div className="flex items-center">
+                                <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                                <span className="text-sm">API Servisi</span>
+                              </div>
+                              <span className="text-xs text-green-500">Çalışıyor</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 border-b">
+                              <div className="flex items-center">
+                                <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                                <span className="text-sm">Veritabanı</span>
+                              </div>
+                              <span className="text-xs text-green-500">Çalışıyor</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 border-b">
+                              <div className="flex items-center">
+                                <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                                <span className="text-sm">E-posta Servisi</span>
+                              </div>
+                              <span className="text-xs text-green-500">Çalışıyor</span>
+                            </div>
+                            <div className="flex justify-between items-center p-2">
+                              <div className="flex items-center">
+                                <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                                <span className="text-sm">Dosya Depolama</span>
+                              </div>
+                              <span className="text-xs text-green-500">Çalışıyor</span>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 pt-4 border-t">
+                            <h4 className="text-sm font-medium mb-2">Sistem Yükü</h4>
+                            <div className="space-y-2">
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span>CPU: 23%</span>
+                                  <span>2/8 Çekirdek</span>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                  <div className="bg-blue-500 h-full rounded-full" style={{ width: "23%" }}></div>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span>Bellek: 41%</span>
+                                  <span>1.3/4 GB</span>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                  <div className="bg-blue-500 h-full rounded-full" style={{ width: "41%" }}></div>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span>Disk: 62%</span>
+                                  <span>124/200 GB</span>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                  <div className="bg-blue-500 h-full rounded-full" style={{ width: "62%" }}></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </div>
