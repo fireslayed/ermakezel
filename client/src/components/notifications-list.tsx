@@ -1,16 +1,26 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCircle, Eye, Trash2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Bell, CheckCircle, Eye, Trash2, Clock, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Notification {
   id: number;
@@ -27,6 +37,7 @@ interface Notification {
 export function NotificationsList() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedNotificationId, setSelectedNotificationId] = useState<number | null>(null);
 
   // Bildirimleri getir
   const { data: notifications, isLoading } = useQuery({
@@ -70,7 +81,6 @@ export function NotificationsList() {
       toast({
         title: "Başarılı",
         description: "Tüm bildirimler okundu olarak işaretlendi.",
-        variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread"] });
@@ -88,10 +98,10 @@ export function NotificationsList() {
       toast({
         title: "Başarılı",
         description: "Bildirim silindi.",
-        variant: "success",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread"] });
+      setSelectedNotificationId(null);
     }
   });
 
@@ -123,6 +133,22 @@ export function NotificationsList() {
     }
   };
 
+  // Bildirim türüne göre icon belirle
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case "info":
+        return <Bell className="h-4 w-4" />;
+      case "success":
+        return <CheckCircle className="h-4 w-4" />;
+      case "warning":
+        return <Clock className="h-4 w-4" />;
+      case "error":
+        return <ExternalLink className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
   if (isLoading) {
     return <NotificationsListSkeleton />;
   }
@@ -132,91 +158,104 @@ export function NotificationsList() {
     : unreadNotifications;
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Bildirimler
+    <div className="w-full h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        {unreadNotifications && unreadNotifications.length > 0 && (
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleMarkAllAsRead}
+            disabled={markAllAsReadMutation.isPending}
+            className="ml-auto"
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Tümünü Okundu İşaretle
+          </Button>
+        )}
+      </div>
+      
+      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="w-full grid grid-cols-2 mb-4">
+          <TabsTrigger value="all">Tüm Bildirimler</TabsTrigger>
+          <TabsTrigger value="unread">
+            Okunmamış
             {unreadNotifications && unreadNotifications.length > 0 && (
-              <Badge variant="destructive" className="ml-2">
+              <Badge variant="secondary" className="ml-2">
                 {unreadNotifications.length}
               </Badge>
             )}
-          </CardTitle>
-          {unreadNotifications && unreadNotifications.length > 0 && (
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleMarkAllAsRead}
-              disabled={markAllAsReadMutation.isPending}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Tümünü Okundu İşaretle
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-        <div className="px-6">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="all">Tüm Bildirimler</TabsTrigger>
-            <TabsTrigger value="unread">
-              Okunmamış
-              {unreadNotifications && unreadNotifications.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {unreadNotifications.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
+          </TabsTrigger>
+        </TabsList>
         
-        <CardContent className="pt-0">
-          <TabsContent value="all" className="mt-0">
-            {notifications && notifications.length > 0 ? (
-              <div className="space-y-4">
-                {notifications.map((notification) => (
-                  <NotificationItem 
-                    key={notification.id} 
-                    notification={notification} 
-                    onMarkAsRead={handleMarkAsRead} 
-                    onDelete={handleDeleteNotification}
-                    getNotificationColor={getNotificationColor}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <Bell className="mx-auto h-12 w-12 opacity-20 mb-2" />
-                <p>Henüz bildirim bulunmuyor.</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="unread" className="mt-0">
-            {unreadNotifications && unreadNotifications.length > 0 ? (
-              <div className="space-y-4">
-                {unreadNotifications.map((notification) => (
-                  <NotificationItem 
-                    key={notification.id} 
-                    notification={notification} 
-                    onMarkAsRead={handleMarkAsRead} 
-                    onDelete={handleDeleteNotification}
-                    getNotificationColor={getNotificationColor}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <CheckCircle className="mx-auto h-12 w-12 opacity-20 mb-2" />
-                <p>Okunmamış bildirim bulunmuyor.</p>
-              </div>
-            )}
-          </TabsContent>
-        </CardContent>
+        <TabsContent value="all" className="mt-0">
+          {notifications && notifications.length > 0 ? (
+            <div className="space-y-2">
+              {notifications.map((notification) => (
+                <NotificationItem 
+                  key={notification.id} 
+                  notification={notification} 
+                  onMarkAsRead={handleMarkAsRead} 
+                  onDelete={(id) => {
+                    setSelectedNotificationId(id);
+                  }}
+                  getNotificationColor={getNotificationColor}
+                  getNotificationIcon={getNotificationIcon}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground bg-card rounded-lg border p-4">
+              <Bell className="mx-auto h-8 w-8 opacity-20 mb-2" />
+              <p>Henüz bildirim bulunmuyor.</p>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="unread" className="mt-0">
+          {unreadNotifications && unreadNotifications.length > 0 ? (
+            <div className="space-y-2">
+              {unreadNotifications.map((notification) => (
+                <NotificationItem 
+                  key={notification.id} 
+                  notification={notification} 
+                  onMarkAsRead={handleMarkAsRead} 
+                  onDelete={(id) => {
+                    setSelectedNotificationId(id);
+                  }}
+                  getNotificationColor={getNotificationColor}
+                  getNotificationIcon={getNotificationIcon}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground bg-card rounded-lg border p-4">
+              <CheckCircle className="mx-auto h-8 w-8 opacity-20 mb-2" />
+              <p>Okunmamış bildirim bulunmuyor.</p>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
-    </Card>
+      
+      <AlertDialog open={selectedNotificationId !== null} onOpenChange={(open) => !open && setSelectedNotificationId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bildirimi Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu bildirimi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => selectedNotificationId && handleDeleteNotification(selectedNotificationId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Evet, Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 
@@ -225,48 +264,57 @@ interface NotificationItemProps {
   onMarkAsRead: (id: number) => void;
   onDelete: (id: number) => void;
   getNotificationColor: (type: string) => string;
+  getNotificationIcon: (type: string) => React.ReactNode;
 }
 
-function NotificationItem({ notification, onMarkAsRead, onDelete, getNotificationColor }: NotificationItemProps) {
+function NotificationItem({ 
+  notification, 
+  onMarkAsRead, 
+  onDelete, 
+  getNotificationColor,
+  getNotificationIcon
+}: NotificationItemProps) {
   return (
     <div 
-      className={`p-4 rounded-lg border ${notification.isRead ? 'opacity-70' : 'border-primary/50 shadow-sm'}`}
+      className={`py-2 px-3 rounded-md border ${notification.isRead ? 'opacity-80 bg-muted/20' : 'border-primary/20 bg-card shadow-sm'}`}
     >
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center">
-          <Badge className={`${getNotificationColor(notification.type)} mr-2`}>
-            {notification.type === "info" && "Bilgi"}
-            {notification.type === "success" && "Başarılı"}
-            {notification.type === "warning" && "Uyarı"}
-            {notification.type === "error" && "Hata"}
-          </Badge>
-          <h4 className="font-medium">{notification.title}</h4>
+      <div className="flex items-start gap-2">
+        <div className={`mt-0.5 rounded-full p-1.5 ${getNotificationColor(notification.type)}`}>
+          {getNotificationIcon(notification.type)}
         </div>
-        <span className="text-xs text-muted-foreground">
-          {format(new Date(notification.createdAt), "d MMMM yyyy HH:mm", { locale: tr })}
-        </span>
-      </div>
-      <p className="text-sm text-muted-foreground mb-3">{notification.message}</p>
-      <div className="flex justify-end space-x-2">
-        {!notification.isRead && (
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={() => onMarkAsRead(notification.id)}
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Okundu İşaretle
-          </Button>
-        )}
-        <Button 
-          size="sm" 
-          variant="ghost" 
-          className="text-destructive hover:text-destructive/90"
-          onClick={() => onDelete(notification.id)}
-        >
-          <Trash2 className="h-4 w-4 mr-1" />
-          Sil
-        </Button>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-0.5">
+            <h4 className="font-medium text-sm truncate mr-2">{notification.title}</h4>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {format(new Date(notification.createdAt), "d MMM HH:mm", { locale: tr })}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-1">{notification.message}</p>
+          
+          <div className="flex justify-end gap-2 mt-1">
+            {!notification.isRead && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-7 text-xs px-2 py-1"
+                onClick={() => onMarkAsRead(notification.id)}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Okundu
+              </Button>
+            )}
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-7 text-xs px-2 py-1 text-destructive hover:text-destructive/90"
+              onClick={() => onDelete(notification.id)}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Sil
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -274,37 +322,34 @@ function NotificationItem({ notification, onMarkAsRead, onDelete, getNotificatio
 
 function NotificationsListSkeleton() {
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-9 w-36" />
-        </div>
-      </CardHeader>
-      <div className="px-6">
-        <Skeleton className="h-10 w-full mb-4" />
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="h-9 w-36 ml-auto" />
       </div>
-      <CardContent>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="p-4 rounded-lg border">
-              <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center">
-                  <Skeleton className="h-6 w-16 mr-2" />
-                  <Skeleton className="h-5 w-40" />
+      
+      <Skeleton className="h-10 w-full mb-4" />
+      
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-3 rounded-md border">
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-1">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-16" />
                 </div>
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <Skeleton className="h-4 w-full my-2" />
-              <Skeleton className="h-4 w-3/4 mb-3" />
-              <div className="flex justify-end space-x-2">
-                <Skeleton className="h-9 w-28" />
-                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-3 w-full mb-1" />
+                <Skeleton className="h-3 w-4/5 mb-3" />
+                <div className="flex justify-end gap-2">
+                  <Skeleton className="h-7 w-16" />
+                  <Skeleton className="h-7 w-12" />
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
