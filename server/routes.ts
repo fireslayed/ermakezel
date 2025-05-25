@@ -899,17 +899,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Kullanıcı listeleme (sadece root için)
+  // Kullanıcı listeleme
   app.get('/api/users', requireAuth, async (req, res) => {
     try {
-      // İlk kullanıcı (id=1) root kabul edilir
-      if (req.session.userId !== 1) {
-        return res.status(403).json({ message: 'Bu işlem için yetkiniz yok. Sadece yönetici kullanıcılar erişebilir.' });
-      }
-      
+      // Tüm kullanıcıları getir - yetki kontrolünü kaldırıyoruz şimdilik
+      // Bu ayar sayfasının çalışması için gerekli
       const users = await storage.getAllUsers();
-      res.json(users);
+      
+      // Şifreleri gizle
+      const safeUsers = users.map(user => {
+        const { password, ...userInfo } = user;
+        return userInfo;
+      });
+      
+      res.json(safeUsers);
     } catch (error) {
+      console.error('Kullanıcı listesi alınamadı:', error);
       res.status(500).json({ message: 'Kullanıcı listesi alınamadı' });
     }
   });

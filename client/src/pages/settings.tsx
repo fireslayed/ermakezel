@@ -149,12 +149,36 @@ export default function Settings() {
     },
   });
   
-  const createUser = (data) => {
-    toast({
-      title: "Kullanıcı oluşturuldu",
-      description: `${data.fullName} kullanıcısı başarıyla oluşturuldu`,
-    });
-    userForm.reset();
+  // Kullanıcı oluşturma mutasyonu
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      // Kullanıcı kaydı için API isteği
+      return await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Kullanıcı oluşturuldu",
+        description: `${data.fullName} kullanıcısı başarıyla oluşturuldu`,
+      });
+      // Kullanıcı listesini güncelle
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      userForm.reset();
+    },
+    onError: (error) => {
+      console.error("Kullanıcı oluşturma hatası:", error);
+      toast({
+        title: "Hata",
+        description: "Kullanıcı oluşturulurken bir hata oluştu. Kullanıcı adı zaten kayıtlı olabilir.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const createUser = (data: any) => {
+    createUserMutation.mutate(data);
   };
   
   // Rol yetkileri için ayarlar
