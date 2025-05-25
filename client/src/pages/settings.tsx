@@ -131,7 +131,9 @@ export default function Settings() {
   
   // Kullanıcı yönetimi için form
   const userFormSchema = z.object({
-    username: z.string().min(3, "Kullanıcı adı en az 3 karakter olmalıdır"),
+    username: z.string()
+      .length(11, "TC Kimlik Numarası tam olarak 11 hane olmalıdır")
+      .regex(/^\d+$/, "TC Kimlik Numarası sadece rakam içermelidir"),
     fullName: z.string().min(2, "Ad soyad en az 2 karakter olmalıdır"),
     email: z.string().email("Geçerli bir e-posta adresi giriniz"),
     password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
@@ -343,7 +345,7 @@ export default function Settings() {
                           <Table>
                             <TableHeader className="bg-muted/50">
                               <TableRow>
-                                <TableHead className="py-2">Kullanıcı Adı</TableHead>
+                                <TableHead className="py-2">TC Kimlik No</TableHead>
                                 <TableHead>Ad Soyad</TableHead>
                                 <TableHead>Rol</TableHead>
                                 <TableHead>Son Giriş</TableHead>
@@ -418,10 +420,20 @@ export default function Settings() {
                               name="username"
                               render={({ field }) => (
                                 <FormItem className="space-y-1.5">
-                                  <FormLabel className="text-xs font-medium">Kullanıcı Adı</FormLabel>
+                                  <FormLabel className="text-xs font-medium">TC Kimlik Numarası</FormLabel>
                                   <FormControl>
-                                    <Input placeholder="kullanici123" className="h-9" {...field} />
+                                    <Input 
+                                      placeholder="12345678901" 
+                                      className="h-9" 
+                                      {...field}
+                                      maxLength={11}
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
+                                    />
                                   </FormControl>
+                                  <FormDescription className="text-xs">
+                                    11 haneli TC Kimlik Numarası
+                                  </FormDescription>
                                   <FormMessage className="text-xs" />
                                 </FormItem>
                               )}
