@@ -134,6 +134,7 @@ export default function Settings() {
     username: z.string().min(3, "Kullanıcı adı en az 3 karakter olmalıdır"),
     fullName: z.string().min(2, "Ad soyad en az 2 karakter olmalıdır"),
     email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+    password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
     role: z.string(),
     isActive: z.boolean().default(true),
   });
@@ -144,6 +145,7 @@ export default function Settings() {
       username: "",
       fullName: "",
       email: "",
+      password: "",
       role: "operator",
       isActive: true,
     },
@@ -445,6 +447,19 @@ export default function Settings() {
                                   <FormLabel className="text-xs font-medium">E-posta</FormLabel>
                                   <FormControl>
                                     <Input placeholder="ahmet@sirket.com" className="h-9" {...field} />
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={userForm.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                  <FormLabel className="text-xs font-medium">Şifre</FormLabel>
+                                  <FormControl>
+                                    <Input type="password" placeholder="••••••" className="h-9" {...field} />
                                   </FormControl>
                                   <FormMessage className="text-xs" />
                                 </FormItem>
